@@ -347,17 +347,6 @@ async def _sales_agent_node(state: AgentState) -> AgentState:
     last_ai = _last_ai_text(messages)
     payment_link_already_sent = "app.bigtapp.com" in last_ai
 
-    # ------------------------------------------------------------------
-    # PURCHASE GATE: if user wants to buy but is not validated, redirect
-    # to identity verification. Anonymous users may browse/compare only.
-    # ------------------------------------------------------------------
-    if not customer_validated and _detect_purchase_signal(user_text):
-        logger.info("sales_agent: purchase signal from unvalidated user → gating")
-        return {
-            "messages": [AIMessage(content=_ANON_GATE_MESSAGE)],
-            "sources": [],
-        }
-
     system_prompt = _build_system_prompt()
 
     # Pass the full conversation history so the LLM can track the journey stage.

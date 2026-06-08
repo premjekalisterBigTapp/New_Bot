@@ -1955,7 +1955,24 @@ def _service_ask_action(state: AgentState) -> Dict[str, Any]:
 
     This prevents poor UX (asking for credentials when the bot hasn't understood the request)
     and avoids getting stuck in loops when an unknown/unsupported action is detected.
+
+    Special case: if the user arrived here via the purchase gate (pending_purchase=True),
+    skip the service menu entirely and return them to the sales journey.
     """
+    if state.get("pending_purchase"):
+        return {
+            "service_action": None,
+            "service_pending_slot": None,
+            "pending_purchase": False,
+            "service_exit_intent": "purchase",
+            "messages": [AIMessage(
+                content=(
+                    "Identity verified! ✅ Let's continue with your insurance purchase. "
+                    "Which product were you looking to get?"
+                )
+            )],
+        }
+
     action_menu = (
         "I can help you with these policy services:\n\n"
         "1) Check claim status\n"

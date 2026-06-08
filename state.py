@@ -449,6 +449,13 @@ class AgentState(MessagesState):
         description="If True, info agent skips product filtering. Useful for general service queries."
     )
 
+    # Purchase gate: set True when an unvalidated user signals purchase intent.
+    # After identity verification completes, supervisor routes back to sales_agent.
+    pending_purchase: bool = Field(
+        default=False,
+        description="User triggered purchase intent before validation; return to sales_agent after verification."
+    )
+
     # If the info agent needs a product to answer, store the user's original question here.
     # Next user message is expected to be a product selection ("travel", "home", etc.).
     info_pending_question: Optional[str] = Field(

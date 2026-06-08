@@ -374,7 +374,23 @@ async def _supervisor_node(state: AgentState, config: RunnableConfig) -> Union[C
                 },
                 goto="summary_agent",
             )
-        
+
+        elif service_exit_intent == "purchase":
+            # User was routed to service_flow for identity verification before purchase.
+            # Verification is now complete — return them to the sales journey.
+            new_phase = ConversationPhase.PURCHASE
+            logger.info("Supervisor.service_exit: identity verified → sales_agent (purchase resume)")
+            return Command(
+                update={
+                    **base_update,
+                    "intent": "purchase",
+                    "phase": new_phase.value,
+                    "phase_history": _update_phase_history(phase_history, new_phase),
+                    "service_exit_intent": None,
+                },
+                goto="sales_agent",
+            )
+
         else:
             # Unknown exit intent - treat as info
             logger.warning("Supervisor.unknown_exit_intent: %s", service_exit_intent)
@@ -680,11 +696,34 @@ async def _supervisor_node(state: AgentState, config: RunnableConfig) -> Union[C
     # The sales agent handles the full journey in one prompt: discovery,
     # explanation, upsell, payment link, confirmation, and cross-sell.
     # Unchanged: greet, capabilities, policy_service, life_insurance.
+    #
+    # PURCHASE GATE: if the user signals purchase intent but is not yet
+    # validated, route to service_flow for identity verification first.
+    # pending_purchase=True tells service_flow to skip the menu and return
+    # the user directly to the sales journey after verification.
     # -----------------------------------------------------------------------
     _SALES_INTENTS = {"info", "summary", "compare", "recommend", "purchase", "other"}
-    if normalized_intent in _SALES_INTENTS or (
+    _is_sales_intent = normalized_intent in _SALES_INTENTS or (
         normalized_intent == "chat" and (known_product or intent_pred.product)
-    ):
+    )
+    if _is_sales_intent:
+        customer_validated = state.get("customer_validated", False)
+        if normalized_intent == "purchase" and not customer_validated:
+            logger.info(
+                "Supervisor.purchase_gate: purchase intent but not validated → service_flow"
+            )
+            new_phase = ConversationPhase.SERVICE_FLOW
+            return Command(
+                update={
+                    "intent": "policy_service",
+                    "product": _normalize_product_key(intent_pred.product or known_product) or (intent_pred.product or known_product),
+                    "phase": new_phase.value,
+                    "phase_history": _update_phase_history(phase_history, new_phase),
+                    "pending_purchase": True,
+                },
+                goto="service_flow",
+            )
+
         logger.info(
             "Supervisor.sales_journey: overriding %s -> sales_agent (product=%s)",
             normalized_intent,
