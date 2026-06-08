@@ -2478,6 +2478,29 @@ async def _service_validate_customer(state: AgentState) -> Dict[str, Any]:
                 customer_nric[-4:] if customer_nric else "?",
             )
 
+            # If the user was routed here via the purchase gate, skip the service
+            # menu entirely — verify identity and return directly to sales journey.
+            if state.get("pending_purchase"):
+                logger.info(
+                    "ServiceFlow.validate_customer: pending_purchase=True → returning to sales_agent"
+                )
+                return {
+                    "customer_validated": True,
+                    "customer_nric": customer_nric,
+                    "customer_data": customer_data,
+                    "service_pending_slot": None,
+                    "service_slots": {},
+                    "pending_purchase": False,
+                    "service_exit_intent": "purchase",
+                    "messages": [AIMessage(
+                        content=(
+                            f"✅ *Identity verified!* Welcome, {given_name}!\n\n"
+                            "Let's continue with your purchase. "
+                            "Which product and plan would you like to go with?"
+                        )
+                    )],
+                }
+
             # Store greeting in service_slots so execute_action can prepend it
             current_slots = dict(state.get("service_slots") or {})
             current_slots["_validated_greeting"] = f"✅ *Customer Validated*\nWelcome, {given_name}! Your identity has been successfully verified."
@@ -4912,6 +4935,9 @@ def _route_after_validation_check(state: AgentState) -> str:
 def _route_after_validation(state: AgentState) -> str:
     """Route after validation attempt."""
     if state.get("customer_validated"):
+        # purchase gate: service_exit_intent already set → supervisor handles return to sales_agent
+        if state.get("service_exit_intent") == "purchase":
+            return "end"
         return "execute_action"
     else:
         return "end"  # Return message is already set

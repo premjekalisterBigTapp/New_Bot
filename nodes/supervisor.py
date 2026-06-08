@@ -407,14 +407,46 @@ async def _supervisor_node(state: AgentState, config: RunnableConfig) -> Union[C
             )
 
     # ======================================================================
+    # FAST-PATH: Payment confirmation guard  ← runs BEFORE service_flow guard
+    #
+    # If the last bot message contained a purchase link AND the user's reply
+    # looks like a payment-done confirmation, force-route to sales_agent.
+    # Must run first so "payment is done" / "done" / "paid" are never
+    # mis-classified as policy_service and swallowed by the service_flow guard.
+    # ======================================================================
+    _PAYMENT_DONE_RE = re.compile(
+        r"\b(done|paid|payment\s+(done|complete(d)?|is\s+done|confirmed|successful)|"
+        r"it'?s\s+done|completed|i('?ve)?\s+paid|ok\s+done|payment\s+ok)\b",
+        re.IGNORECASE,
+    )
+    _last_user_for_guard = _last_user_text(messages).lower().strip()
+    _last_ai_for_guard = _last_ai_text(messages).lower()
+
+    if (
+        "app.bigtapp.com" in _last_ai_for_guard
+        and _PAYMENT_DONE_RE.search(_last_user_for_guard)
+    ):
+        _guard_phase = ConversationPhase.PURCHASE
+        logger.info(
+            "Supervisor.payment_confirm_guard: purchase link sent + user confirmed payment "
+            "→ sales_agent (product=%s)",
+            known_product,
+        )
+        return Command(
+            update={
+                "intent": "purchase",
+                "product": known_product,
+                "phase": _guard_phase.value,
+                "phase_history": _update_phase_history(phase_history, _guard_phase),
+            },
+            goto="sales_agent",
+        )
+
+    # ======================================================================
     # SERVICE FLOW GUARD: while in policy/claim service flow, do not
     # re-interpret user messages as new top-level intents.
     #
-    # This prevents short replies like NRIC fragments or initials from being
-    # classified as 'other' and routed to the generic chat agent, which the
-    # user experiences as hallucination. As long as we are mid service flow
-    # (not yet validated, collecting credentials, or executing an action),
-    # always route back to the service_flow subgraph.
+    # Runs AFTER payment guard so "done/paid" on a payment link always wins.
     # ======================================================================
     if current_phase == ConversationPhase.SERVICE_FLOW.value:
         customer_validated = state.get("customer_validated", False)
@@ -446,43 +478,6 @@ async def _supervisor_node(state: AgentState, config: RunnableConfig) -> Union[C
                 },
                 goto="service_flow",
             )
-    
-    # ======================================================================
-    # FAST-PATH: Payment confirmation guard
-    #
-    # If the last bot message contained a purchase link AND the user's reply
-    # looks like a payment-done confirmation, force-route to sales_agent.
-    # This prevents the intent classifier from mis-classifying "payment done",
-    # "done", "paid", etc. as policy_service and sending the user to service_flow.
-    # ======================================================================
-    _PAYMENT_DONE_SIGNALS = frozenset({
-        "done", "done!", "paid", "payment done", "payment done!",
-        "it's done", "its done", "completed", "payment successful",
-        "i've paid", "ive paid", "payment complete", "ok done",
-        "payment confirmed", "i paid", "i have paid",
-    })
-    _last_user_for_guard = _last_user_text(messages).lower().strip()
-    _last_ai_for_guard = _last_ai_text(messages).lower()
-
-    if (
-        "app.bigtapp.com" in _last_ai_for_guard
-        and _last_user_for_guard in _PAYMENT_DONE_SIGNALS
-    ):
-        _guard_phase = ConversationPhase.PURCHASE
-        logger.info(
-            "Supervisor.payment_confirm_guard: purchase link sent + user confirmed payment "
-            "→ sales_agent (product=%s)",
-            known_product,
-        )
-        return Command(
-            update={
-                "intent": "purchase",
-                "product": known_product,
-                "phase": _guard_phase.value,
-                "phase_history": _update_phase_history(phase_history, _guard_phase),
-            },
-            goto="sales_agent",
-        )
 
     # ======================================================================
     # FAST-PATH: Capabilities / services queries (no extra LLM call)
