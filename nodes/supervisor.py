@@ -432,6 +432,43 @@ async def _supervisor_node(state: AgentState, config: RunnableConfig) -> Union[C
             )
     
     # ======================================================================
+    # FAST-PATH: Payment confirmation guard
+    #
+    # If the last bot message contained a purchase link AND the user's reply
+    # looks like a payment-done confirmation, force-route to sales_agent.
+    # This prevents the intent classifier from mis-classifying "payment done",
+    # "done", "paid", etc. as policy_service and sending the user to service_flow.
+    # ======================================================================
+    _PAYMENT_DONE_SIGNALS = frozenset({
+        "done", "done!", "paid", "payment done", "payment done!",
+        "it's done", "its done", "completed", "payment successful",
+        "i've paid", "ive paid", "payment complete", "ok done",
+        "payment confirmed", "i paid", "i have paid",
+    })
+    _last_user_for_guard = _last_user_text(messages).lower().strip()
+    _last_ai_for_guard = _last_ai_text(messages).lower()
+
+    if (
+        "app.bigtapp.com" in _last_ai_for_guard
+        and _last_user_for_guard in _PAYMENT_DONE_SIGNALS
+    ):
+        _guard_phase = ConversationPhase.PURCHASE
+        logger.info(
+            "Supervisor.payment_confirm_guard: purchase link sent + user confirmed payment "
+            "→ sales_agent (product=%s)",
+            known_product,
+        )
+        return Command(
+            update={
+                "intent": "purchase",
+                "product": known_product,
+                "phase": _guard_phase.value,
+                "phase_history": _update_phase_history(phase_history, _guard_phase),
+            },
+            goto="sales_agent",
+        )
+
+    # ======================================================================
     # FAST-PATH: Capabilities / services queries (no extra LLM call)
     #
     # Prevents UX loops where service/capabilities questions get routed into
