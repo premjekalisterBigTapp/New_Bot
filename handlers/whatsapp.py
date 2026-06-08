@@ -61,6 +61,22 @@ GREETING_MESSAGE = (
     "answer your questions instantly, and make things easier for you. How can I help you today?"
 )
 
+# Farewell message
+FAREWELL_MESSAGE = (
+    "Thank you for chatting with BigTapp! 😊 "
+    "It was a pleasure assisting you. "
+    "If you ever need help with your insurance, don't hesitate to reach out. "
+    "Have a wonderful day! 👋"
+)
+
+# Words that trigger a farewell response (not a session reset)
+_FAREWELL_KEYWORDS = frozenset({
+    "bye", "goodbye", "good bye", "byebye", "bye bye",
+    "cya", "see you", "see ya", "take care", "farewell",
+    "thanks bye", "thank you bye", "ok bye", "okay bye",
+    "tq bye", "ok tq", "ok thank you",
+})
+
 
 class AgenticWhatsAppHandler:
     """
@@ -337,6 +353,13 @@ class AgenticWhatsAppHandler:
             
             await self._send_message_async(user_phone, GREETING_MESSAGE)
             WA_MESSAGES_PROCESSED_TOTAL.labels(result="greeting_reset").inc()
+            return
+
+        # Handle farewell — send goodbye message without resetting the session
+        if message.lower().strip() in _FAREWELL_KEYWORDS:
+            logger.info(f"AgenticWA: Received farewell from {session_id}")
+            await self._send_message_async(user_phone, FAREWELL_MESSAGE)
+            WA_MESSAGES_PROCESSED_TOTAL.labels(result="farewell").inc()
             return
         
         try:
