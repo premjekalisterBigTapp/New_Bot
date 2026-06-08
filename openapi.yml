@@ -1,0 +1,605 @@
+openapi: 3.0.1
+info:
+  title: BigTapp AI Chatbot Unified API
+  description: |
+    Combined API documentation.
+    - Structure and Input Payloads based on PAS.Api (Eva).
+    - Response Envelopes and Error Codes based on Chatbot App (Nad).
+  version: 1.0.2
+  contact:
+    name: BigTapp API Support
+    email: support@bigtapp.com
+servers:
+  - url: http://172.28.6.195:8085
+    description: Internal Staging Server
+
+paths:
+  # -------------------------
+  # CLAIMS
+  # -------------------------
+  /api/v1/claim/submit:
+    post:
+      tags:
+        - Claims
+      summary: Submit a new claim
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitClaimRequest'
+        required: true
+      responses:
+        '200':
+          description: Claim submitted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        description: Result of the claim submission
+        '400':
+          $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          $ref: '#/components/schemas/UnauthorizedResponse'
+        '422':
+          $ref: '#/components/schemas/ValidationErrorResponse'
+
+  /api/v1/claim/list/{idCardNumber}:
+    get:
+      tags:
+        - Claims
+      summary: Get list of claims by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: idCardNumber
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Claims list retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            claimId:
+                              type: string
+                            status:
+                              type: string
+        '401':
+          $ref: '#/components/schemas/UnauthorizedResponse'
+        '422':
+          $ref: '#/components/schemas/ValidationErrorResponse'
+
+  # -------------------------
+  # CUSTOMERS
+  # -------------------------
+  /api/v1/customer/validate:
+    post:
+      tags:
+        - Customers
+      summary: Validate customer existence
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidateCustomerRequest'
+        required: true
+      responses:
+        '200':
+          description: Customer verified successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          message:
+                            type: string
+                            example: "Customer verified successfully"
+                          idCardNumber:
+                            type: string
+                          firstName:
+                            type: string
+                          lastName:
+                            type: string
+                          policies:
+                            type: array
+                            items:
+                              type: object
+        '401':
+          $ref: '#/components/schemas/UnauthorizedResponse'
+        '422':
+          $ref: '#/components/schemas/ValidationErrorResponse'
+
+  /api/v1/customer/update:
+    post:
+      tags:
+        - Customers
+      summary: Update customer particulars
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCustomerRequest'
+        required: true
+      responses:
+        '200':
+          description: Customer updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          message:
+                            type: string
+                            example: "Customer updated successfully"
+        '400':
+          $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          $ref: '#/components/schemas/UnauthorizedResponse'
+        '422':
+          $ref: '#/components/schemas/ValidationErrorResponse'
+
+  # -------------------------
+  # POLICIES
+  # -------------------------
+  /api/v1/policies:
+    get:
+      tags:
+        - Policy
+      summary: Get all policies
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Policies retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            policyNo:
+                              type: string
+                            productName:
+                              type: string
+                            status:
+                              type: string
+        '401':
+          $ref: '#/components/schemas/UnauthorizedResponse'
+
+  /api/v1/policies/{policyNo}:
+    get:
+      tags:
+        - Policy
+      summary: Get specific policy details
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: policyNo
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Policy details retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          policyNo:
+                            type: string
+                          product_name:
+                            type: string
+                          policy_status:
+                            type: string
+                          wording_link:
+                            type: string
+        '401':
+          $ref: '#/components/schemas/UnauthorizedResponse'
+        '404':
+          $ref: '#/components/schemas/NotFoundResponse'
+
+  /api/v1/home-protect-insured-address/update:
+    post:
+      tags:
+        - Policy
+      summary: Update insured address for Home Protect
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateInsuredAddressRequest'
+        required: true
+      responses:
+        '200':
+          description: Address updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          message:
+                            type: string
+                            example: "Customer insured address updated successfully"
+                          policyNo:
+                            type: string
+        '400':
+          $ref: '#/components/schemas/BadRequestResponse'
+        '401':
+          $ref: '#/components/schemas/UnauthorizedResponse'
+        '404':
+          $ref: '#/components/schemas/NotFoundResponse'
+        '422':
+          $ref: '#/components/schemas/ValidationErrorResponse'
+
+  /api/v1/chatbot/policies:
+    get:
+      tags:
+        - Policy
+      summary: Get policies for chatbot context
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: nric
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Policies retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+        '401':
+          $ref: '#/components/schemas/UnauthorizedResponse'
+
+  # -------------------------
+  # PRODUCT & UTILS
+  # -------------------------
+  /api/v1/product/quote:
+    get:
+      tags:
+        - Product
+      summary: Get product quote
+      responses:
+        '200':
+          description: Quote retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+
+  /api/v1/postalCode/{postalCode}:
+    get:
+      tags:
+        - Product
+      summary: Get address by postal code
+      parameters:
+        - name: postalCode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Address details retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          streetName:
+                            type: string
+                          buildingName:
+                            type: string
+        '404':
+          $ref: '#/components/schemas/NotFoundResponse'
+
+  /api/v1/countries:
+    get:
+      tags:
+        - Product
+      summary: Get list of countries
+      responses:
+        '200':
+          description: Countries retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            code:
+                              type: string
+                            name:
+                              type: string
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # -------------------------
+    # RESPONSE ENVELOPES (Source A)
+    # -------------------------
+    ResponseEnvelope:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-05-20T10:09:32+08:00"
+        success:
+          type: boolean
+        warnings:
+          type: array
+          items:
+            type: object
+            properties:
+              message:
+                type: string
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              message:
+                type: string
+              code:
+                type: integer
+        data:
+          type: object
+
+    SuccessResponse:
+      allOf:
+        - $ref: "#/components/schemas/ResponseEnvelope"
+        - type: object
+          properties:
+            success:
+              type: boolean
+              example: true
+            errors:
+              type: array
+              example: []
+
+    ErrorResponseStructure:
+      allOf:
+        - $ref: "#/components/schemas/ResponseEnvelope"
+        - type: object
+          properties:
+            success:
+              type: boolean
+              example: false
+            data:
+              type: object
+              nullable: true
+              example: null
+
+    # -------------------------
+    # REUSABLE RESPONSES
+    # -------------------------
+    UnauthorizedResponse:
+      description: Unauthorized access.
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/ErrorResponseStructure"
+              - properties:
+                  errors:
+                    example:
+                      - code: 1211
+                        message: "Unauthorized access. Please check your credentials."
+
+    ValidationErrorResponse:
+      description: Invalid Input / Validation Failed
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/ErrorResponseStructure"
+              - properties:
+                  errors:
+                    example:
+                      - code: 4001
+                        message: "Field 'mobileNo' is required."
+
+    BadRequestResponse:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/ErrorResponseStructure"
+              - properties:
+                  errors:
+                    example:
+                      - code: 4000
+                        message: "Invalid JSON format."
+
+    NotFoundResponse:
+      description: Resource Not Found
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/ErrorResponseStructure"
+              - properties:
+                  errors:
+                    example:
+                      - code: 4040
+                        message: "Policy not found."
+
+    # -------------------------
+    # INPUT PAYLOADS (Source B)
+    # -------------------------
+    SubmitClaimRequest:
+      type: object
+      properties:
+        policyNo:
+          type: string
+          nullable: true
+        context:
+          type: string
+          nullable: true
+      additionalProperties: false
+
+    AddressChangeRequest:
+      type: object
+      properties:
+        postalCode:
+          type: string
+          nullable: true
+        unitNo:
+          type: string
+          nullable: true
+        houseNo:
+          type: string
+          nullable: true
+        streetName:
+          type: string
+          nullable: true
+        buildingName:
+          type: string
+          nullable: true
+      additionalProperties: false
+
+    UpdateCustomerRequest:
+      type: object
+      properties:
+        nric:
+          type: string
+          nullable: true
+        updateType:
+          $ref: '#/components/schemas/UpdateType'
+        updateRequest:
+          type: object
+      additionalProperties: false
+
+    UpdateInsuredAddressRequest:
+      required:
+        - updateRequest
+      type: object
+      properties:
+        policyNo:
+          type: string
+          nullable: true
+        updateRequest:
+          $ref: '#/components/schemas/AddressChangeRequest'
+      additionalProperties: false
+
+    UpdateType:
+      enum:
+        - mobile_change
+        - email_change
+        - address_change
+        - payment_info_change
+        - full_info_change
+      type: string
+
+    ValidateCustomerRequest:
+      required:
+        - firstName
+        - lastName
+        - mobileNo
+        - policyNo
+      type: object
+      properties:
+        nricFin:
+          type: string
+          nullable: true
+        passportNo:
+          type: string
+          nullable: true
+        mobileNo:
+          type: string
+          nullable: true
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        policyNo:
+          type: string
+          nullable: true
+      additionalProperties: false

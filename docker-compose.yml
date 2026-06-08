@@ -1,0 +1,203 @@
+# =============================================================================
+# BigTapp Agentic Chatbot - Docker Infrastructure
+# =============================================================================
+#
+# This docker-compose file sets up the complete infrastructure for the
+# BigTapp Agentic Chatbot including Redis, MongoDB, Weaviate, Prometheus, and Grafana.
+#
+# SECURITY NOTES:
+# - All services have authentication enabled
+# - Passwords are loaded from .env file (never commit real passwords!)
+# - Internal network isolation between services
+# - All ports bound to 127.0.0.1 (localhost only - not exposed to network)
+#
+# USAGE:
+#   docker-compose up -d                    # Start all services
+#   docker-compose down                     # Stop all services
+#   docker-compose logs -f <service_name>   # View logs
+#   docker-compose ps                       # Check status
+#
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # REDIS - Session & Checkpoint Storage
+  # ===========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: bigtapp-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --appendonly yes
+      --requirepass ${REDIS_PASSWORD:-agentic_redis_2025}
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6380}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - bigtapp-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-agentic_redis_2025}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ===========================================================================
+  # MONGODB - Conversation History Storage
+  # ===========================================================================
+  mongodb:
+    image: mongo:7
+    container_name: bigtapp-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-agentic_mongo_2025}
+      MONGO_INITDB_DATABASE: ${MONGO_DB_NAME:-bigtapp}
+    ports:
+      - "127.0.0.1:${MONGO_PORT:-27018}:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - bigtapp-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ===========================================================================
+  # WEAVIATE - Vector Database for RAG
+  # ===========================================================================
+  weaviate:
+    image: cr.weaviate.io/semitechnologies/weaviate:1.28.4
+    container_name: bigtapp-weaviate
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${WEAVIATE_HTTP_PORT:-8081}:8080"   # REST API
+      - "127.0.0.1:${WEAVIATE_GRPC_EXT_PORT:-50052}:50051" # gRPC
+    environment:
+      QUERY_DEFAULTS_LIMIT: 25
+      AUTHENTICATION_APIKEY_ENABLED: 'true'
+      AUTHENTICATION_APIKEY_ALLOWED_KEYS: '${WEAVIATE_API_KEY:-agentic_weaviate_2025}'
+      AUTHENTICATION_APIKEY_USERS: 'agentic-user'
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'false'
+      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
+      DEFAULT_VECTORIZER_MODULE: 'none'
+      CLUSTER_HOSTNAME: 'node1'
+      ENABLE_MODULES: ''
+      LOG_LEVEL: 'info'
+    volumes:
+      - bigtapp_weaviate_data:/var/lib/weaviate
+    networks:
+      - bigtapp-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/v1/.well-known/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ===========================================================================
+  # PROMETHEUS - Metrics Collection
+  # ===========================================================================
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: bigtapp-prometheus
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - bigtapp-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ===========================================================================
+  # GRAFANA - Metrics Visualization
+  # ===========================================================================
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: bigtapp-grafana
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT:-3001}:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-agentic_grafana_2025}
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+      GF_SERVER_ROOT_URL: '%(protocol)s://%(domain)s:%(http_port)s/grafana/'
+      GF_SERVER_SERVE_FROM_SUB_PATH: 'true'
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./config/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - bigtapp-network
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# =============================================================================
+# NETWORKS
+# =============================================================================
+networks:
+  bigtapp-network:
+    driver: bridge
+    name: bigtapp-network
+
+# =============================================================================
+# VOLUMES
+# =============================================================================
+volumes:
+  redis_data:
+    name: bigtapp-redis-data
+  mongodb_data:
+    name: bigtapp-mongodb-data
+  bigtapp_weaviate_data:
+    name: bigtapp-weaviate-data
+  prometheus_data:
+    name: bigtapp-prometheus-data
+  grafana_data:
+    name: bigtapp-grafana-data

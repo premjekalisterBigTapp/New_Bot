@@ -1,0 +1,100 @@
+# ============================================
+# BigTapp Agentic Chatbot - Dependencies
+# LangChain v1 Compatible
+# Requires Python 3.10+
+# ============================================
+
+# Core Framework
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+pydantic>=2.5.0
+
+# Production Server (Linux/Docker only)
+gunicorn>=21.2.0
+
+# ============================================
+# LangChain v1 & LangGraph (UPGRADED)
+# ============================================
+# LangChain v1 introduces:
+# - langchain.agents.middleware module
+# - create_agent (replaces create_react_agent)
+# - AgentState, ToolRuntime
+# - @dynamic_prompt, @before_model, @after_model decorators
+langchain>=1.0.0
+langchain-core>=1.0.0
+langchain-openai>=1.0.0
+langgraph>=1.0.0
+
+# LangMem for advanced memory management (optional)
+# langmem>=0.1.0
+
+# ============================================
+# Azure OpenAI
+# ============================================
+openai>=1.12.0
+
+# ============================================
+# Text Splitting (for KB ingestion)
+# ============================================
+langchain-text-splitters>=0.2.0
+
+# ============================================
+# Vector Store (Weaviate)
+# ============================================
+weaviate-client>=4.4.0
+
+# ============================================
+# Redis (for session & checkpointing)
+# ============================================
+redis>=5.0.0
+
+# LangGraph checkpointing base (required for custom Redis checkpointer)
+langgraph-checkpoint>=2.0.0
+
+# ============================================
+# MongoDB (for conversation history)
+# ============================================
+pymongo>=4.6.0
+
+# ============================================
+# HTTP Client
+# ============================================
+httpx>=0.26.0
+
+# ============================================
+# Serialization
+# ============================================
+orjson>=3.9.0
+
+# ============================================
+# Environment & Config
+# ============================================
+python-dotenv>=1.0.0
+
+# ============================================
+# Metrics (Prometheus)
+# ============================================
+prometheus-client>=0.19.0
+
+# ============================================
+# WebSockets (for Zoom integration)
+# ============================================
+websockets>=12.0
+
+# ============================================
+# YAML parsing
+# ============================================
+pyyaml>=6.0.1
+
+# ============================================
+# Email Validation (intelligent validation)
+# ============================================
+email-validator>=2.1.0
+
+# ============================================
+# Development Dependencies (optional)
+# ============================================
+# pytest>=8.0.0
+# pytest-asyncio>=0.23.0
+# black>=24.0.0
+# ruff>=0.2.0

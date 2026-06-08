@@ -1,0 +1,213 @@
+"""
+LLM-driven end-to-end sales journey agent.
+
+Handles the full customer journey in a single node:
+  Discovery → Explanation → Upsell → Payment link → Payment confirmation
+  → Cross-sell → Cross-sell close
+
+The LLM reads the conversation history and decides which stage it is in —
+no rule-based state machine, no hard routing conditions.
+"""
+from __future__ import annotations
+
+import logging
+import yaml
+from functools import lru_cache
+from pathlib import Path
+from typing import List
+
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, BaseMessage
+
+from ..state import AgentState
+from ..config import CONFIG_DIR, _load_purchase_links
+from ..infrastructure import get_response_llm, get_chat_llm
+from ..tools.purchase import CROSS_SELL_MAP, FRIENDLY_NAMES
+from ..utils.memory import _get_last_user_message
+
+logger = logging.getLogger(__name__)
+
+_SALES_PRODUCTS_PATH = CONFIG_DIR / "sales_products.yaml"
+
+
+@lru_cache(maxsize=1)
+def _load_sales_products() -> dict:
+    """Load and cache the product catalogue YAML."""
+    try:
+        text = _SALES_PRODUCTS_PATH.read_text(encoding="utf-8")
+        data = yaml.safe_load(text) or {}
+        return data
+    except Exception as e:
+        logger.warning("sales_agent: failed to load sales_products.yaml: %s", e)
+        return {}
+
+
+def _build_product_knowledge() -> str:
+    """Format product catalogue into compact text for the system prompt."""
+    products = _load_sales_products()
+    if not products:
+        return "Product details are currently unavailable."
+
+    lines = []
+    for key, p in products.items():
+        lines.append(f"\n## {p.get('name', key)}")
+        lines.append(p.get("summary", "").strip())
+        tiers = p.get("tiers", {})
+        if tiers:
+            lines.append("Tiers:")
+            for tier, desc in tiers.items():
+                lines.append(f"  - {tier}: {desc}")
+        upsell = p.get("upsell_tier", "")
+        upsell_reason = p.get("upsell_reason", "")
+        if upsell and upsell_reason:
+            lines.append(f"Recommended upsell tier: {upsell} — {upsell_reason}")
+    return "\n".join(lines)
+
+
+def _build_product_links_text() -> str:
+    """Format purchase links as key: url pairs for the system prompt."""
+    links = _load_purchase_links()
+    if not links:
+        return "No purchase links configured."
+    lines = []
+    for key, url in links.items():
+        friendly = FRIENDLY_NAMES.get(key, key)
+        lines.append(f"- {friendly} ({key}): {url}")
+    return "\n".join(lines)
+
+
+def _build_cross_sell_text() -> str:
+    """Format the cross-sell map as readable text for the system prompt."""
+    lines = []
+    for product_key, info in CROSS_SELL_MAP.items():
+        primary = FRIENDLY_NAMES.get(product_key, product_key)
+        lines.append(
+            f"- After {primary}: suggest *{info['name']}* — {info['blurb']}"
+        )
+    return "\n".join(lines)
+
+
+_SYSTEM_PROMPT_TEMPLATE = """\
+You are a friendly, knowledgeable BigTapp insurance advisor on WhatsApp.
+Your goal is to guide the customer through a complete insurance purchase journey.
+
+JOURNEY STAGES — follow these in order based on the conversation history:
+
+STAGE 1 – DISCOVER
+Ask 1 or 2 short, friendly questions to understand what the customer needs.
+Never dump all questions at once. Listen and respond to what they share.
+
+STAGE 2 – EXPLAIN
+Once you know their situation, explain the most suitable product and its tiers.
+Use 3-5 bullet points. Bold important terms with *asterisks*. Keep it concise.
+
+STAGE 3 – UPSELL
+Recommend the premium tier using the upsell_reason from the product knowledge.
+Give one clear, personalised reason why upgrading is worth it for their situation.
+
+STAGE 4 – PAYMENT
+When the customer agrees, says yes, says they want it, or asks to buy/purchase:
+Respond with EXACTLY this format (fill in the correct link):
+  "Great choice! Here is your payment link:
+   [LINK]
+   Complete your payment and let me know once it is done!"
+Always use the correct link for the product from PRODUCT LINKS below.
+
+STAGE 5 – CONFIRM PAYMENT
+When the customer says they have paid, it is done, payment successful, or similar:
+Respond with EXACTLY this format (fill in the product name):
+  "Payment confirmed! 🎉 Your [PRODUCT NAME] policy is now being processed.
+   You will receive your policy document via email within 24 hours.
+   Thank you for choosing BigTapp — you have made a great decision!"
+
+STAGE 6 – CROSS-SELL
+Immediately after confirming payment, in the SAME message or the very next one,
+introduce the complementary product. Use this format:
+  "Since you now have [PRODUCT], here is something that pairs perfectly with it:
+   *[CROSS-SELL NAME]* — [CROSS-SELL BLURB]
+   Want to know more?"
+Use the CROSS-SELL PAIRS table below to find the right pairing.
+
+STAGE 7 – CLOSE THE CROSS-SELL
+If the customer shows interest: explain the cross-sell briefly (2-3 bullets),
+highlight the best tier, and provide the payment link when they agree.
+
+RULES:
+- Never ask for the customer's name or personal contact details.
+- Keep every message short and WhatsApp-friendly (no walls of text).
+- Never say you are an AI or a chatbot. Stay in character as an advisor.
+- If the customer goes off-topic, gently steer them back to the insurance journey.
+- If you are unsure which stage you are at, re-read the full conversation history before replying.
+- Never invent prices, limits, or coverage details. Only use the PRODUCT KNOWLEDGE below.
+- Use *bold* sparingly for emphasis. Use bullet points (•) for lists.
+- Do NOT use headers like ###. Do NOT use markdown tables.
+
+PRODUCT LINKS:
+{product_links}
+
+CROSS-SELL PAIRS:
+{cross_sell_pairs}
+
+PRODUCT KNOWLEDGE:
+{product_knowledge}
+"""
+
+_FALLBACK_REPLY = (
+    "Sorry, I'm having a moment — please try again and I'll be right with you!"
+)
+
+
+@lru_cache(maxsize=1)
+def _build_system_prompt() -> str:
+    """Build and cache the full system prompt (static after startup)."""
+    return _SYSTEM_PROMPT_TEMPLATE.format(
+        product_links=_build_product_links_text(),
+        cross_sell_pairs=_build_cross_sell_text(),
+        product_knowledge=_build_product_knowledge(),
+    )
+
+
+async def _sales_agent_node(state: AgentState) -> AgentState:
+    """LLM-driven end-to-end sales journey agent.
+
+    Uses the full conversation history so the LLM can determine the current
+    stage (discover / explain / upsell / payment / confirm / cross-sell) without
+    any hard-coded state flags.
+    """
+    messages: List[BaseMessage] = state.get("messages", []) or []
+    user_text = _get_last_user_message(messages)
+    product = state.get("product") or ""
+    logger.info(
+        "sales_agent: turn=%d product=%s query_len=%d",
+        state.get("turn_count", 0),
+        product,
+        len(user_text),
+    )
+
+    system_prompt = _build_system_prompt()
+
+    # Pass the full conversation history so the LLM can track the journey stage.
+    # Cap at last 20 messages to avoid prompt overflow.
+    history: List[BaseMessage] = [
+        m for m in messages[-20:] if isinstance(m, (HumanMessage, AIMessage))
+    ]
+    if not history:
+        history = [HumanMessage(content=user_text or "Hello, I need insurance.")]
+
+    llm_messages = [SystemMessage(content=system_prompt)] + history
+
+    try:
+        llm = get_response_llm()
+    except Exception:
+        llm = get_chat_llm()
+
+    try:
+        ai_msg = await llm.ainvoke(llm_messages)
+        content = getattr(ai_msg, "content", None) or str(ai_msg)
+    except Exception as exc:
+        logger.exception("sales_agent: LLM call failed: %s", exc)
+        content = _FALLBACK_REPLY
+
+    return {
+        "messages": [AIMessage(content=content)],
+        "sources": [],
+    }

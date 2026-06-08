@@ -1,0 +1,73 @@
+
+fraud:
+  purchase_frequency:
+    type: enum
+    values: ["daily", "weekly", "monthly", "rarely"]
+  scam_exp:
+    type: enum
+    values: ["yes", "almost", "no"]
+
+travel:
+  coverage_scope:
+    type: enum
+    values: ["self", "family", "group_adults", "group_families"]
+  destination:
+    type: location
+    allow_city: true
+    allow_country: true
+
+maid:
+  duration_of_insurance:
+    type: integer
+    allowed_values: [14, 26]
+  maid_country:
+    type: location
+    allow_city: true
+    allow_country: true
+  coverage_above_mom_minimum:
+    type: enum
+    values: ["yes", "no"]
+  add_ons:
+    type: enum
+    values: ["required", "not_required"]
+
+personalaccident:
+  coverage_scope:
+    type: enum
+    values: ["self", "family"]
+  risk_level:
+    type: enum
+    values: ["low", "medium", "high"]
+  desired_amount:
+    type: integer
+    min: 500
+    max: 3500
+
+home:
+  risk_concerns:
+    type: set
+    values: ["fire", "water damage", "theft"]
+  coverage_amount:
+    type: integer
+    min: 1
+
+early:
+  existing_cover:
+    type: enum
+    values: ["yes", "no"]
+  dependants:
+    type: enum
+    values: ["yes", "no"]
+
+hospital:
+  age:
+    type: age
+    numeric_min: 15
+    numeric_max: 110
+    bands: ["below 25", "25-35", "36-45", "above 45"]
+  support:
+    type: enum
+    values: ["yes", "no"]
+  coverage:
+    type: integer
+    allowed_values: [100, 200, 300]

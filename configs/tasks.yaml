@@ -1,0 +1,215 @@
+identify_product:
+  description: |
+    Identify which insurance product the user refers to. **Handle typos robustly**.
+    If the user's message is exactly one product name or a known alias (case-insensitive) and contains no conflicting references, return that product with confidence 1.0 and do not include a question.
+    For non-unique tier names ("Basic", "Silver", "Gold", "Premier", "Platinum"), require additional product cues; otherwise, ask a short clarification question.
+    If ambiguous, provide a short clarification question.
+    Return only a single JSON object. No extra text.
+  agent: "product_identifier"
+  expected_output: |
+    { "product": "Travel" | "Maid" | "Car" | "PersonalAccident" | "Home" | "Early" | "Fraud" | "Hospital" | "", "confidence": 0.0-1.0, "question"?: string, "product_switch_reason"?: "explicit_brand" | "explicit_name_with_insurance_cue" | "explicit_correction" | "synonym_with_insurance_cue" | "alias_acronym" | "typo_corrected" }
+
+
+
+identify_tiers:
+  description: |
+    Identify which tiers to compare for a given product from the user's message and recent session context.
+    - Inputs (via context): Product, User message, Recent history window (optional)
+    - Output 2+ tiers when available for Travel/Maid/PersonalAccident/Home/Fraud/Hospital; for Car and Early, indicate that tiers do not apply.
+    - If the message indicates an aggregate request (e.g., "across plans", "all plans", "across all plans", "any plan", "all of them"), return the full set of valid tiers for the product.
+    - For products with no tiers (Car, Early), respond with a concise clarification noting there are no tiers and ask which aspects to compare.
+    If ambiguous or insufficient, return a short clarification question.
+    Return only a single JSON object. No extra text.
+  agent: "tier_identifier"
+  expected_output: |
+    { "product": "<product>", "tiers": ["<tier>", "<tier>", ...], "question"?: "<short>" }
+
+followup_clarification:
+  description: |
+    Generate one short, guided clarification question to collect the next missing detail in comparison or summary flow.
+    Inputs (via context):
+    - await: product|tiers
+    - product (may be null)
+    - known tiers (optional)
+    - recent history (optional)
+    - flow_type: comparison|summary (optional, defaults to comparison)
+    Return only a single JSON object. No extra text.
+  agent: "followup_clarification_agent"
+  expected_output: |
+    { "question": "<short question>", "options"?: ["<opt>"] }
+
+
+synthesize_response:
+  description: |
+    Use the provided system and user context to synthesize a response.
+  agent: "recommendation_responder"
+  expected_output: |
+    { "response": "<final response>" }
+
+answer_capabilities:
+  description: |
+    Answer the user's question about the bot's capabilities, supported products, and available tiers.
+    Use ONLY the provided Knowledge Base text. If the requested detail is not present, state so briefly.
+    Keep the answer concise and user-friendly; use short bullets when listing items.
+  agent: "capabilities_responder"
+  expected_output: |
+    { "response": "<final response>" }
+
+extract_slots:
+  description: |
+    Extract and update slot values from the user's message using conversation context.
+    The context WILL provide a product-specific list of valid slots under "Valid slots" and a JSON object under "Slot meta" describing each slot's type (value|choice|yesno) and any options.
+    - Only return keys that appear in the provided "Valid slots" list.
+    - Use "Last bot question" to disambiguate yes/no replies.
+    - Do NOT validate ranges or reject values based on Slot meta; treat ranges/options as hints only. Always extract the raw value if you can identify it.
+    - **Extraction Strategy**:
+      * **Prioritize raw extraction**: If the user provides a value that seems related to a slot (e.g., an occupation for 'risk_level', a country name for 'destination'), extract it AS-IS into the slot value. Do NOT clear the value just because it doesn't match the exact option list. The downstream validator is responsible for mapping/normalizing.
+      * **Occupation for risk_level**: If the slot is 'risk_level' and the user provides a job title (for example, 'accountant', 'driver', 'nurse', 'engineer', but not limited to these), EXTRACT the job title as the raw value for 'risk_level'. Do NOT set 'user_needs_explanation'.
+      * **Side information questions (policy-level)**: When the user's message is primarily asking for policy/benefit/coverage/limit/exclusion/add-on information instead of providing a slot value or asking what the slot itself means, do NOT invent a slot value and do NOT set user_needs_explanation. Instead, set `"info_intent": "handle_information"` and `"info_query"` to a short, self-contained restatement of their information question, and leave all slot values empty. This allows downstream flows to answer via RAG before re-asking the slot question.
+    - **Explanation Triggering (Strict)**:
+      * Only set 'user_needs_explanation' if the user EXPLICITLY asks for help (e.g., "what does that mean?", "explain", "help") or expresses explicit uncertainty (e.g., "I don't know", "not sure").
+      * Providing a value that requires normalization (like a job title) is NOT a request for explanation.
+      * For the Maid product, when the slot is 'coverage_above_mom_minimum' and the user is confused or asks what the coverage is, your explanation MUST mention that MOM requires at least $60,000 medical coverage and a $5,000 security bond, then ask clearly if they want coverage beyond this minimum (Yes/No).
+    - IMPORTANT: If the user message contains NO slot-related information (e.g., just a product name), return empty strings for all slots and DO NOT set user_needs_explanation.
+    - **Country Names**: For destination and maid_country slots, ACCEPT country abbreviations as valid input (e.g., "PH", "PHP" for Philippines, "US", "USA" for United States, "UK" for United Kingdom, "SG" for Singapore, "MY" for Malaysia, "ID" for Indonesia, etc.). Extract the abbreviation as-is; downstream validation will normalize it to the full country name.
+    - **Plan Preference ONLY** (if plan_preference slot exists in Valid slots): Common phrases that indicate budget/coverage preferences:
+      * "no budget constraints", "money is no issue", "best coverage" → extract as "comprehensive" for plan_preference slot ONLY
+      * "cheapest", "budget option", "basic" → extract as "budget" for plan_preference slot ONLY
+      * DO NOT apply these mappings to other slots like coverage_scope, coverage_amount, etc.
+    - If a value appears out of range or malformed, still extract it; downstream validation will handle corrections.
+    - If the user asks for clarification about a specific slot OR says they don't know, set user_needs_explanation to that slot and provide a SHORT explanation (under 50 words) that ends with the right type of request:
+      * Yes/No slots → ask a clear (Yes/No) question
+      * Choice-based slots → ask the user to choose one of the listed options
+      * Value slots → ask for the specific value in the expected format/range (NEVER Yes/No)
+    - When the user says "I don't know" or similar uncertainty phrases, provide a brief explanation of what the slot is for, then ask them to provide the information.
+    Return only a single JSON object. No extra text.
+  agent: "slot_extractor"
+  expected_output: |
+    {
+      "slot_name_1": "<extracted/updated value or empty string>",
+      "slot_name_2": "<extracted/updated value or empty string>",
+      "slot_name_3": "<extracted/updated value or empty string>",
+      "user_needs_explanation": "<slot_name if user asks for clarification about a slot or says they don't know, otherwise empty string>",
+      "explanation": "<short explanation (under 50 words) that ends with a slot-appropriate request if user_needs_explanation is not empty; otherwise empty>"
+    }
+
+ask_question:
+  description: "Generate a clear, user-friendly question to collect missing slot information for insurance recommendations."
+  agent: "question_asker"
+  expected_output: |
+    { "question": "<clear, concise question for the missing slot>" }
+
+
+classify_confirmation:
+  description: |
+    Determine whether the user affirmed ("yes"), declined ("no"), or responded with a different intent (handle_information, plan_only_comparison, handle_summary, handle_recommendation) to the bot's previous yes/no style question.
+    Normalize slang/emoji/multi-lingual yes/no expressions. Use ONLY the provided question + user reply.
+    IMPORTANT:
+    - Use "plan_only_comparison" ONLY when the reply contains explicit comparison verbs (e.g., "compare", "difference between", "which plan is better") together with plan/tier wording.
+    - For generic questions such as "what are the other plans available?" or "what other options are there?" WITHOUT comparison verbs, prefer "handle_information" (or "handle_recommendation" if they explicitly ask you to recommend another plan).
+  agent: "confirmation_classifier"
+  expected_output: |
+    { "classification": "yes" | "no" | "handle_information" | "plan_only_comparison" | "handle_summary" | "handle_recommendation", "confidence": 0.0-1.0 }
+
+
+validate_slot:
+  description: |
+    Your task is to validate and normalize one {product} slot for the given product.
+
+    **CRITICAL RULES:**
+    1.  You must validate ONLY the single slot specified in the [Context] block under the "Slot:" key. Do not infer or validate other slots.
+    2.  You must use ONLY the validation rules provided in the [Context] block under "Validation rules:".
+    3.  Prioritize the provided 'Value' field from the [Context] when it is already in a normalized format (e.g., an integer for days).
+    4.  Your response must be a single, complete JSON object that adheres to the Output contract.
+
+    **WHEN INVALID (valid:false):**
+    - Always provide both "reason" (brief explanation of what's wrong) and "question" (what to provide instead).
+    - Reference the user's input when helpful (e.g., "'Karur' appears to be a city" or "Sep 2020 is in the past").
+    - Keep questions short and actionable (<25 words when possible).
+    - Pattern: "<Brief reason>. <Clear instruction for what to provide>."
+    Return only a single JSON object. No extra text.
+  agent: "slot_validator"
+  expected_output: |
+    { "valid": true|false, "slot_name": string, "normalized_value"?: string, "question"?: string, "reason"?: string }
+
+ 
+route_decision:
+  description: |
+    Context JSON fields:
+      - CURRENT_MESSAGE
+      - SESSION_PRODUCT
+      - turn (first | follow_up_candidate | normal)
+      - LAST_COMPLETED (recommendation | comparison | summary | none)
+      - PENDING_FLAG (boolean)
+      - RECENT_CONTEXT (string[]; most recent first, up to 2 short lines)
+    
+    Output Requirements:
+    - Return directive with optional evidence field citing words/entities from message or recent_context
+    - Evidence is required for plan_only_comparison (must cite tier names or comparison verbs)
+    - When in doubt between plan_only_comparison and handle_information, prefer handle_information
+    
+    Return only a single JSON object. No extra text.
+  agent: "orchestrator"
+  expected_output: |
+    { "directive": "greet" | "handle_recommendation" | "handle_purchase" | "handle_information" | "handle_follow_up" | "plan_only_comparison" | "handle_summary" | "handle_capabilities" | "live_agent" | "handle_other", "evidence"?: "<optional: tokens/entities from message or context>" }
+
+construct_follow_up_query:
+  description: |
+    Intelligently analyze if the user message needs context reconstruction, and only construct a follow-up query if necessary. Classify the resulting query with confidence and explicit evidence so the orchestrator can route it reliably.
+
+    Inputs (via context):
+    - Product
+    - Latest user message
+    - Recent conversation window (up to 3 most recent turns)
+
+    Analysis Steps:
+    1. Check if the message is already self-contained and clear
+    2. If yes, return the original message as-is in the query field
+    3. If no (contains pronouns, vague references, or incomplete context):
+       • Resolve pronouns and references using recent conversation
+       • Include product name and specific benefit/tier being discussed
+       • Create a precise, self-contained question
+       • Do NOT add assumptions or invent facts
+
+    Query Classification with Evidence:
+    • Set `query_type` using orchestrator directives
+    • Provide `routing_confidence` (0.0-1.0) based on clarity of intent
+    • Provide `evidence` citing only tokens/entities from user message or conversation:
+      - plan_only_comparison → ONLY when comparing plans/tiers as a whole (not specific aspects like benefits/conditions/exclusions)
+      - handle_summary → ONLY when summarizing plan/tier as a whole (not specific aspects like conditions/eligibility/exclusions)
+      - handle_recommendation → user asks for a recommendation/quote/plan suggestion
+      - handle_information → default for ALL aspect-specific queries (conditions, eligibility, exclusions, benefits, claims) even with "summarize"/"compare" verbs
+
+    Evidence Rules:
+    • Cite only words/entities present in user message or recent conversation
+    • DO NOT introduce tiers, benefits, or entities not mentioned by user
+    • If user asks about exclusions, policy details, coverage specifics → route to handle_information with confidence >= 0.8
+    • If fewer than two tiers mentioned and no explicit comparison verb → route to handle_information
+
+    Examples:
+    - "compare all plans" → {query: "compare all Travel insurance plans", query_type: "plan_only_comparison", routing_confidence: 0.9, evidence: "compare plans"}
+    - "summarise that plan for me" → {query: "summarise the Travel insurance Silver plan", query_type: "handle_summary", routing_confidence: 0.85, evidence: "summarise + plan"}
+    - "summarize eligibility conditions" → {query: "summarize eligibility conditions for Fraud insurance", query_type: "handle_information", routing_confidence: 0.9, evidence: "eligibility conditions"}
+    - "what are the exclusions" → {query: "what are the exclusions for Travel insurance", query_type: "handle_information", routing_confidence: 0.95, evidence: "exclusions"}
+
+    Return only a single JSON object. No extra text.
+  agent: "follow_up_agent"
+  expected_output: |
+    { "query": "<standalone query or original message>", "query_type": "plan_only_comparison" | "handle_summary" | "handle_recommendation" | "handle_purchase" | "handle_information", "routing_confidence": 0.0-1.0, "evidence": "<tokens/entities cited from user message or conversation>" }
+
+decide_finishing_response:
+  description: |
+    Decide whether the bot should send a brief friendly reply or stay silent for a short, low-content user message (e.g., "ok", "thanks", "bye") based on recent context.
+    You will ONLY see messages that have already been pre-filtered as acknowledgements or closings by the main flow.
+    Use LAST_COMPLETED, SESSION_PRODUCT, and RECENT_HISTORY to infer whether:
+    - A recommendation, information answer, comparison, or summary has just finished,
+    - A purchase link was already provided,
+    - The user is clearly ending the conversation (for example, "thank you", "bye", "that's all").
+    Prefer "no_reply" when replying would feel like unnecessary noise, especially after an obvious closing.
+    Keep any reply under ~20 words, polite, and NEVER introduce new topics or restate policy details.
+  agent: "conversation_finisher"
+  expected_output: |
+    {
+      "action": "no_reply" | "short_ack" | "friendly_closing",
+      "reply": "<short text if action != 'no_reply', else empty string>"
+    }

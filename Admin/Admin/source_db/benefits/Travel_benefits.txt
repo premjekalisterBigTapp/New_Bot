@@ -1,0 +1,84 @@
+TABLE 1 FROM TRAVEL INSURANCE:
+
+TABLE 2 FROM TRAVEL INSURANCE:
+Under the Medical And Other Expenses coverage, the Overseas Medical Expenses benefit for Adult (age 70 years and below) is 150,000 for Basic, 250,000 for Silver, 500,000 for Gold, and 750,000 for Platinium.
+Under the Medical And Other Expenses coverage, the Overseas Medical Expenses benefit for Adult (age above 70 years) is 50,000 for Basic, 50,000 for Silver, 100,000 for Gold, and 100,000 for Platinium.
+Under the Medical And Other Expenses coverage, the Overseas Medical Expenses benefit for Child is 100,000 for Basic, 100,000 for Silver, 100,000 for Gold, and 100,000 for Platinium.
+Under the Medical And Other Expenses coverage, the Medical Expenses in Singapore (capped at S$100 per visit where no initial treatment was sought overseas) benefit for Adult (age 70 years and below) is 10,000 for Basic, 15,000 for Silver, 20,000 for Gold, and 25,000 for Platinium.
+Under the Medical And Other Expenses coverage, the Medical Expenses in Singapore (capped at S$100 per visit where no initial treatment was sought overseas) benefit for Adult (age above 70 years) is 1,000 for Basic, 1,500 for Silver, 2,500 for Gold, and 5,000 for Platinium.
+Under the Medical And Other Expenses coverage, the Medical Expenses in Singapore (capped at S$100 per visit where no initial treatment was sought overseas) benefit for Child is 1,000 for Basic, 1,500 for Silver, 2,500 for Gold, and 5,000 for Platinium.
+Under the Medical And Other Expenses coverage, the Compassionate Visit benefit is 3,000 for Basic, 5,000 for Silver, 10,000 for Gold, and 15,000 for Platinium.
+Under the Medical And Other Expenses coverage, the Repatriation of Mortal Remains benefit is Unlimited for Basic, Unlimited for Silver, Unlimited for Gold, and Unlimited for Platinium.
+Under the Medical And Other Expenses coverage, the Overseas Funeral Expenses benefit is 1,000 for Basic, 1,500 for Silver, 2,000 for Gold, and 2,500 for Platinium.
+Under the Medical And Other Expenses coverage, the Return of Minor Children benefit is 3,000 for Basic, 5,000 for Silver, 8,000 for Gold, and 10,000 for Platinium.
+Under the Medical And Other Expenses coverage, the Emergency Medical Evacuation benefit is Unlimited for Basic, Unlimited for Silver, Unlimited for Gold, and Unlimited for Platinium.
+Under the Medical And Other Expenses coverage, the Overseas Hospital Cash Benefit is 10,000 for Basic, 15,000 for Silver, 20,000 for Gold, and 25,000 for Platinium.
+Under the Medical And Other Expenses coverage, the Overseas Hospital Cash Benefit for every 24 hours is 200 for Basic, 200 for Silver, 200 for Gold, and 200 for Platinium.
+Under the Medical And Other Expenses coverage, the Hospital Cash Benefit in Singapore is 600 for Basic, 1,000 for Silver, 1,600 for Gold, and 2,000 for Platinium.
+Under the Medical And Other Expenses coverage, the Hospital Cash Benefit in Singapore for every 24 hours is 200 for Basic, 200 for Silver, 200 for Gold, and 200 for Platinium.
+Under the Personal Accident coverage, the Accidental Death & Permanent Disablement benefit for Adult (age 70 years and below) is 200,000 for Basic, 250,000 for Silver, 300,000 for Gold, and 350,000 for Platinium.
+Under the Personal Accident coverage, the Accidental Death & Permanent Disablement benefit for Adult (age above 70 years) is 50,000 for Basic, 50,000 for Silver, 50,000 for Gold, and 50,000 for Platinium.
+Under the Personal Accident coverage, the Accidental Death & Permanent Disablement benefit for Child is 50,000 for Basic, 50,000 for Silver, 50,000 for Gold, and 50,000 for Platinium.
+Under the Personal Accident coverage, the Credit Card Outstanding Balance benefit is 1,000 for Basic, 1,500 for Silver, 2,000 for Gold, and 2,500 for Platinium.
+Under the Personal Accident coverage, the Cash Relief for Death due to Accident benefit is 3,000 for Basic, 4,000 for Silver, 5,000 for Gold, and 6,000 for Platinium.
+Under the Personal Accident coverage, the Child Education Grant benefit is not available for Basic, 50,000 for Silver, 50,000 for Gold, and 50,000 for Platinium.
+Under the Personal Accident coverage, the Child Education Grant benefit per Child is not available for Basic, 5,000 for Silver, 5,000 for Gold, and 5,000 for Platinium.
+Under the Travel Inconvenience coverage, the Loss of Baggage and Personal Effects benefit is 3,000 for Basic, 5,000 for Silver, 7,000 for Gold, and 8,000 for Platinium.
+Under the Travel Inconvenience coverage, the Personal Money benefit is 250 for Basic, 250 for Silver, 500 for Gold, and 500 for Platinium.
+Under the Travel Inconvenience coverage, the Personal Documents benefit is 2,000 for Basic, 3,000 for Silver, 4,000 for Gold, and 5,000 for Platinium.
+Under the Travel Inconvenience coverage, the Emergency Phone Charges benefit is 100 for Basic, 100 for Silver, 100 for Gold, and 100 for Platinium.
+Under the Travel Inconvenience coverage, the Delayed Baggage benefit is 800 for Basic, 1,000 for Silver, 1,200 for Gold, and 1,500 for Platinium.
+Under the Travel Inconvenience coverage, the Delayed Baggage benefit for every 6 hours while overseas is 100 for Basic, 100 for Silver, 100 for Gold, and 100 for Platinium.
+Under the Travel Inconvenience coverage, the Delayed Baggage benefit after 6 hours in Singapore is 100 for Basic, 100 for Silver, 100 for Gold, and 100 for Platinium.
+Under the Travel Inconvenience coverage, the Total Limit for Family for Delayed Baggage is 2,000 for Basic, 2,500 for Silver, 3,000 for Gold, and 3,750 for Platinium.
+Under the Travel Inconvenience coverage, the Travel Cancellation benefit is 5,000 for Basic, 7,000 for Silver, 12,000 for Gold, and 15,000 for Platinium.
+Under the Travel Inconvenience coverage, the Total Limit for Family for Travel Cancellation is 12,000 for Basic, 12,500 for Silver, 30,000 for Gold, and 37,500 for Platinium.
+Under the Travel Inconvenience coverage, the Travel Curtailment benefit is 3,000 for Basic, 5,000 for Silver, 8,000 for Gold, and 10,000 for Platinium.
+Under the Travel Inconvenience coverage, the Total Limit for Family for Travel Curtailment is 7,500 for Basic, 12,500 for Silver, 20,000 for Gold, and 25,000 for Platinium.
+Under the Travel Inconvenience coverage, the Travel Delay benefit is 1,000 for Basic, 1,000 for Silver, 1,000 for Gold, and 1,000 for Platinium.
+Under the Travel Inconvenience coverage, the Travel Delay benefit for every 6 hours is 100 for Basic, 100 for Silver, 100 for Gold, and 100 for Platinium.
+Under the Travel Inconvenience coverage, the Total Limit for Family for Travel Delay is 2,500 for Basic, 2,500 for Silver, 2,500 for Gold, and 2,500 for Platinium.
+Under the Travel Inconvenience coverage, the Travel Postponement benefit is 500 for Basic, 1,000 for Silver, 1,500 for Gold, and 2,000 for Platinium.
+Under the Travel Inconvenience coverage, the Total Limit for Family for Travel Postponement is 1,250 for Basic, 2,500 for Silver, 3,750 for Gold, and 5,000 for Platinium.
+Under the Travel Inconvenience coverage, the Travel Misconnections benefit is 200 for Basic, 200 for Silver, 200 for Gold, and 200 for Platinium.
+Under the Travel Inconvenience coverage, the Travel Misconnections benefit for every 6 hours is 100 for Basic, 100 for Silver, 100 for Gold, and 100 for Platinium.
+Under the Travel Inconvenience coverage, the Total Limit for Family for Travel Misconnections is 500 for Basic, 500 for Silver, 500 for Gold, and 500 for Platinium.
+Under the Travel Inconvenience coverage, the Travel Disruption benefit is 500 for Basic, 1,000 for Silver, 2,000 for Gold, and 3,000 for Platinium.
+Under the Travel Inconvenience coverage, the Total Limit for Family for Travel Disruption is 1,250 for Basic, 2,500 for Silver, 5,000 for Gold, and 7,500 for Platinium.
+Under the Travel Inconvenience coverage, the Flight Overbooked benefit is 100 for Basic, 100 for Silver, 100 for Gold, and 100 for Platinium.
+Under the Travel Inconvenience coverage, the Flight Overbooked benefit for every 6 hours is 100 for Basic, 100 for Silver, 100 for Gold, and 100 for Platinium.
+Under the Travel Inconvenience coverage, the Flight Diversion benefit is 1,000 for Basic, 1,000 for Silver, 1,000 for Gold, and 1,000 for Platinium.
+Under the Travel Inconvenience coverage, the Flight Diversion benefit for every 6 hours is 100 for Basic, 100 for Silver, 100 for Gold, and 100 for Platinium.
+Under the Travel Inconvenience coverage, the Hijack of Common Carrier benefit is 500 for Basic, 1,000 for Silver, 2,000 for Gold, and 3,000 for Platinium.
+Under the Travel Inconvenience coverage, the Hijack of Common Carrier benefit for every 6 hours is 100 for Basic, 100 for Silver, 100 for Gold, and 100 for Platinium.
+Under the Travel Inconvenience coverage, the Kidnap and Hostage benefit is not available for Basic, 2,500 for Silver, 5,000 for Gold, and 7,500 for Platinium.
+Under the Travel Inconvenience coverage, the Kidnap and Hostage benefit for every 6 hours is not available for Basic, 500 for Silver, 500 for Gold, and 500 for Platinium.
+Under the Travel Inconvenience coverage, the Insolvency of Travel Agency benefit is not available for Basic, 1,000 for Silver, 2,000 for Gold, and 3,000 for Platinium.
+Under the Liability coverage, the Personal Liability benefit is 500,000 for Basic, 500,000 for Silver, 1,000,000 for Gold, and 1,000,000 for Platinium.
+Under the Lifestyle coverage, the Loss of Home Contents due to Burglary benefit is 1,000 for Basic, 1,500 for Silver, 2,000 for Gold, and 2,500 for Platinium.
+Under the Lifestyle coverage, the Golfing "Hole in One" benefit is 150 for Basic, 250 for Silver, 350 for Gold, and 450 for Platinium.
+Under the Lifestyle coverage, the Credit Card Protection benefit is not available for Basic, 600 for Silver, 1,000 for Gold, and 1,500 for Platinium.
+Under the Lifestyle coverage, the Rental Car Excess benefit is 500 for Basic, 750 for Silver, 1,000 for Gold, and 1,250 for Platinium.
+Under the Enhanced Medical Benefits coverage, the Overseas Medical Expenses due to COVID-19 benefit for Adult (age 70 years and below) is not available for Basic, 50,000 for Silver, 150,000 for Gold, and 200,000 for Platinium.
+Under the Enhanced Medical Benefits coverage, the Overseas Medical Expenses due to COVID-19 benefit for Adult (age above 70 years) is not available for Basic, 25,000 for Silver, 75,000 for Gold, and 150,000 for Platinium.
+Under the Enhanced Medical Benefits coverage, the Overseas Medical Expenses due to COVID-19 benefit for Child is not available for Basic, 50,000 for Silver, 150,000 for Gold, and 200,000 for Platinium.
+Under the Enhanced Medical Benefits coverage, the Overseas Hospital Cash Benefit due to COVID-19 is not available for Basic, 1,000 for Silver, 2,000 for Gold, and 3,000 for Platinium.
+Under the Enhanced Medical Benefits coverage, the Overseas Hospital Cash Benefit due to COVID-19 for every 24 hours is not available for Basic, 50 for Silver, 100 for Gold, and 150 for Platinium.
+Under the Enhanced Medical Benefits coverage, the Overseas Quarantine Allowance due to COVID-19 is not available for Basic, 500 for Silver, 1,000 for Gold, and 1,500 for Platinium.
+Under the Enhanced Medical Benefits coverage, the Overseas Quarantine Allowance due to COVID-19 for every 24 hours is not available for Basic, 50 for Silver, 100 for Gold, and 150 for Platinium.
+Under the Enhanced Medical Benefits coverage, the Repatriation of Mortal Remains due to COVID-19 benefit is not available for Basic, Unlimited for Silver, Unlimited for Gold, and Unlimited for Platinium.
+Under the Enhanced Medical Benefits coverage, the Emergency Medical Evacuation due to COVID-19 benefit is not available for Basic, Unlimited for Silver, Unlimited for Gold, and Unlimited for Platinium.
+Under the Enhanced Travel Inconvenience coverage, the Travel Cancellation due to COVID-19 benefit is not available for Basic, 1,000 for Silver, 2,000 for Gold, and 3,000 for Platinium.
+Under the Enhanced Travel Inconvenience coverage, the Total Limit for Family for Travel Cancellation due to COVID-19 is not available for Basic, 2,500 for Silver, 5,000 for Gold, and 7,500 for Platinium.
+Under the Enhanced Travel Inconvenience coverage, the Travel Postponement due to COVID-19 benefit is not available for Basic, 750 for Silver, 1,500 for Gold, and 2,000 for Platinium.
+Under the Enhanced Travel Inconvenience coverage, the Total Limit for Family for Travel Postponement due to COVID-19 is not available for Basic, 1,875 for Silver, 3,750 for Gold, and 5,000 for Platinium.
+Under the Enhanced Travel Inconvenience coverage, the Travel Curtailment due to COVID-19 benefit is not available for Basic, 1,000 for Silver, 2,000 for Gold, and 3,000 for Platinium.
+Under the Enhanced Travel Inconvenience coverage, the Total Limit for Family for Travel Curtailment due to COVID-19 is not available for Basic, 2,500 for Silver, 5,000 for Gold, and 7,500 for Platinium.
+Under the Optional Covers coverage, the Pre-Existing Condition Overseas Medical Expenses benefit for Adult (age 70 years and below) is 25,000 for Basic, 50,000 for Silver, 75,000 for Gold, and 100,000 for Platinium.
+Under the Optional Covers coverage, the Pre-Existing Condition Overseas Medical Expenses benefit for Child is 10,000 for Basic, 20,000 for Silver, 30,000 for Gold, and 40,000 for Platinium.
+Under the Optional Covers coverage, the Emergency Medical Evacuation benefit for Adult (age 70 years and below) is 10,000 for Basic, 20,000 for Silver, 30,000 for Gold, and 50,000 for Platinium.
+Under the Optional Covers coverage, the Emergency Medical Evacuation benefit for Child is 10,000 for Basic, 20,000 for Silver, 30,000 for Gold, and 50,000 for Platinium.
+Under the Optional Covers coverage, the Flight Delay benefit is 1,000 for Basic, 1,000 for Silver, 1,000 for Gold, and 1,000 for Platinium.
+Under the Optional Covers coverage, the Flight Delay benefit for every 3 hours is 100 for Basic, 100 for Silver, 100 for Gold, and 100 for Platinium.
+Under the Optional Covers coverage, the Loss of Frequent Flyer Miles benefit is Covered for Basic, Covered for Silver, Covered for Gold, and Covered for Platinium.
+

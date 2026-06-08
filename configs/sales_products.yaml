@@ -1,0 +1,136 @@
+# BigTapp product catalogue for the LLM sales agent.
+# Used as inline product knowledge in the sales system prompt.
+# Keep entries factual and concise — the LLM uses this verbatim.
+
+travel:
+  name: Travel Protect360
+  tagline: "Comprehensive travel protection for every trip."
+  summary: >
+    Covers overseas medical emergencies, trip cancellation, travel delay,
+    lost baggage, and personal liability. Available for single trips and annual plans.
+  tiers:
+    Basic: "Overseas medical up to S$200,000. Trip cancellation up to S$5,000. Baggage loss up to S$3,000. Travel delay S$100/6 hrs (max S$1,000)."
+    Silver: "Overseas medical up to S$300,000. Trip cancellation up to S$10,000. Baggage loss up to S$5,000. Travel delay S$150/6 hrs (max S$1,500). Rental vehicle excess S$1,500."
+    Gold: "Overseas medical up to S$500,000. Trip cancellation up to S$15,000. Baggage loss up to S$7,500. Travel delay S$200/6 hrs (max S$2,000). Emergency home return. Rental vehicle excess S$2,500."
+    Platinum: "Overseas medical up to S$1,000,000. Unlimited trip cancellation. Baggage loss up to S$10,000. Travel delay S$250/6 hrs (max S$2,500). Rental vehicle excess S$5,000. Golf hole-in-one coverage."
+  upsell_tier: Gold
+  upsell_reason: "Gold adds Emergency Home Return cover and doubles the medical limit — essential for long-haul trips or family travel."
+  purchase_key: travel
+
+maid:
+  name: Maid Protect360 Pro
+  tagline: "Complete protection for your domestic helper."
+  summary: >
+    Covers hospitalisation, surgery, personal accident, repatriation, and
+    third-party liability for your domestic helper. Fulfils MOM requirements.
+  tiers:
+    Basic: "Hospitalisation & surgery up to S$15,000. Personal accident S$60,000. Repatriation S$10,000."
+    Enhanced: "Hospitalisation & surgery up to S$20,000. Personal accident S$80,000. Repatriation S$15,000. Outpatient illness S$500."
+    Premier: "Hospitalisation & surgery up to S$30,000. Personal accident S$100,000. Repatriation S$20,000. Outpatient illness S$1,000. Dental S$300."
+    Exclusive: "Hospitalisation & surgery up to S$40,000. Personal accident S$120,000. Repatriation S$25,000. Outpatient illness S$1,500. Dental S$500. Temporary maid replacement S$1,500."
+  upsell_tier: Premier
+  upsell_reason: "Premier includes outpatient illness cover and dental — so minor illnesses don't mean out-of-pocket costs for the employer."
+  purchase_key: maid
+
+car:
+  name: Car Protect360
+  tagline: "Comprehensive motor insurance with added peace of mind."
+  summary: >
+    Third-party liability, own-damage cover, fire and theft, 24/7 roadside
+    assistance, and a courtesy car during repairs. Single comprehensive plan.
+  tiers:
+    Comprehensive: "Third-party bodily injury (unlimited). Own damage & theft. Fire cover. Windscreen cover S$1,500. 24/7 roadside assistance. Courtesy car up to 5 days."
+  upsell_tier: Comprehensive
+  upsell_reason: "The Comprehensive plan is the only option — it includes everything from own-damage to a courtesy car, giving you full protection on the road."
+  purchase_key: car
+
+personalaccident:
+  name: Family Protect360 (Personal Accident)
+  tagline: "Financial protection for your family against accidents."
+  summary: >
+    Pays a lump sum for accidental death or permanent disability, covers
+    accident medical expenses, and provides daily hospital cash. Benefit
+    limits increase 5–15% each year.
+  tiers:
+    Bronze: "Accidental death/PTD S$100,000. Accident medical S$1,000. Hospital cash S$50/day."
+    Silver: "Accidental death/PTD S$200,000. Accident medical S$2,000. Hospital cash S$100/day. Benefit increases 5%/yr."
+    Premier: "Accidental death/PTD S$300,000. Accident medical S$3,000. Hospital cash S$150/day. Benefit increases 10%/yr."
+    Platinum: "Accidental death/PTD S$500,000. Accident medical S$5,000. Hospital cash S$200/day. Benefit increases 15%/yr. Bereavement S$3,000."
+  upsell_tier: Premier
+  upsell_reason: "Premier's 10% annual benefit increase means your family's protection automatically grows without a premium review."
+  purchase_key: personalaccident
+
+home:
+  name: Home Protect360
+  tagline: "Protect your home, contents, and family's belongings."
+  summary: >
+    Covers building structure, home contents, personal belongings away from
+    home, and alternative accommodation costs. Includes S$350 excess per claim.
+  tiers:
+    Silver: "Building S$500,000. Contents S$50,000. Personal belongings S$1,500. Alternative accommodation S$5,000."
+    Gold: "Building S$750,000. Contents S$75,000. Personal belongings S$2,500. Alternative accommodation S$10,000. Helper belongings S$1,000."
+    Platinum: "Building S$1,000,000. Contents S$100,000. Personal belongings S$5,000. Alternative accommodation S$15,000. Helper belongings S$2,000. Golf equipment S$1,500."
+  upsell_tier: Gold
+  upsell_reason: "Gold adds helper belongings cover and doubles the alternative accommodation limit — important if a disaster means your family needs to stay elsewhere for weeks."
+  purchase_key: home
+
+early:
+  name: Early Protect360 Plus
+  tagline: "Lump-sum payout for early and advanced stage critical illnesses."
+  summary: >
+    Pays on diagnosis of 9 early-stage and 8 advanced-stage critical illness
+    conditions including cancer, heart attack, and stroke. Renewable up to age 99.
+    14-day free-look period. Claim reporting within 30 days of diagnosis.
+  tiers:
+    S$50000: "Sum insured S$50,000. Pays 20% (S$10,000) for early stage; 100% (S$50,000) for advanced stage."
+    S$100000: "Sum insured S$100,000. Pays 20% (S$20,000) for early stage; 100% (S$100,000) for advanced stage."
+    S$200000: "Sum insured S$200,000. Pays 20% (S$40,000) for early stage; 100% (S$200,000) for advanced stage."
+    S$300000: "Sum insured S$300,000. Pays 20% (S$60,000) for early stage; 100% (S$300,000) for advanced stage."
+  upsell_tier: S$200000
+  upsell_reason: "S$200,000 sum insured gives a meaningful lump sum — enough to cover at least 6–12 months of income replacement while focusing on recovery."
+  purchase_key: early
+
+fraud:
+  name: Fraud Protect360 Plus
+  tagline: "Digital financial protection against online fraud and scams."
+  summary: >
+    Covers online shopping fraud, fund transfer scams, cyber extortion,
+    identity theft, and restoration costs — up to S$10,000. Includes
+    accidental death, hospital cash, and accident medical benefits.
+  tiers:
+    Gold: "Fraud cover S$10,000. Accidental death S$100,000. Accident medical S$500. Hospital cash S$50/day (max 14 days)."
+    Platinum: "Fraud cover S$10,000. Accidental death S$200,000. Accident medical S$1,000. Hospital cash S$100/day (max 30 days)."
+  upsell_tier: Platinum
+  upsell_reason: "Platinum doubles accident and hospitalisation benefits — giving you full-spectrum protection beyond just fraud coverage."
+  purchase_key: fraud
+
+hospital:
+  name: Hospital Protect360
+  tagline: "Daily cash benefit during hospitalisation."
+  summary: >
+    Pays a fixed daily cash benefit for every day spent in hospital due to
+    illness or accident. Simple, no-claims process — just show the discharge summary.
+  tiers:
+    Silver: "S$100/day. Max 365 days/year. Intensive care S$200/day (max 90 days)."
+    Premier: "S$150/day. Max 365 days/year. Intensive care S$300/day (max 90 days). Day surgery S$150/visit."
+    Titanium: "S$200/day. Max 365 days/year. Intensive care S$400/day (max 90 days). Day surgery S$200/visit. Convalescence allowance S$50/day (max 30 days)."
+  upsell_tier: Premier
+  upsell_reason: "Premier adds Day Surgery cover so even outpatient procedures that require anaesthesia are compensated — increasingly common for modern treatments."
+  purchase_key: hospital
+
+choice:
+  name: Choice Protect360
+  tagline: "A customizable personal accident plan with optional add-ons."
+  summary: >
+    Base plan covers accidental death, permanent disability, accident medical,
+    and daily hospital income. Enhance with optional add-ons: Home Contents,
+    Hospital Income, or Annual Travel. Add-on discounts: 5% for 1, 10% for 2,
+    15% for 3 or more.
+  tiers:
+    Basic: "AD&D S$50,000. Accident medical S$500. Daily hospital income S$30/day."
+    Silver: "AD&D S$100,000. Accident medical S$1,000. Daily hospital income S$50/day."
+    Gold: "AD&D S$200,000. Accident medical S$2,000. Daily hospital income S$80/day."
+    Platinum: "AD&D S$300,000. Accident medical S$3,000. Daily hospital income S$100/day."
+  upsell_tier: Gold
+  upsell_reason: "Gold gives four times the accident cover of Basic and allows you to stack add-ons for a 15% bundle discount — great value for growing families."
+  purchase_key: choice

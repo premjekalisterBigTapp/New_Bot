@@ -1,0 +1,49 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Environment / secrets
+.env
+.env.docker
+.env.local
+
+# Tools / IDE
+.vscode/
+.idea/
+.cursor/
+
+# Caches / coverage / build
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+dist/
+build/
+
+# Logs
+*.log
+logs.txt
+
+# Local knowledge base sources (root-level only, Admin/source_db is tracked)
+/source_db/
+
+# Build artifacts
+*.egg-info/
+
+# Admin folder (debug_chunks and logs excluded, source_db and scripts tracked)
+Admin/**/debug_chunks/
+Admin/**/logs/
+Admin/**/*.log
+
+# Documentation (local only)
+docs/INSTALL_AND_TEST.md
+
+# Client-provided docs (not for repo)
+From Client/
+UWT/
+Tests/
+LEGACY_BRAND_REFERENCE.md
+PROJECT_EXPLANATION.md

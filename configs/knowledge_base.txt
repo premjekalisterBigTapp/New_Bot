@@ -1,0 +1,29 @@
+BigTapp Bot Knowledge Base
+
+Scope: Use this document to answer questions about what the bot can do, supported products, and available plans/tiers. If a user asks for factual policy details (coverage, exclusions, limits), defer to product information flows (not this KB).
+
+Bot Capabilities
+- Information: Answer policy/benefit questions for supported products.
+- Summary: Summarize a plan/tier when user asks for an overview.
+- Comparison: Compare plans/tiers as a whole when requested.
+- Recommendation: Collect a few preferences and suggest a suitable plan.
+
+Supported Products
+- Choice Protect360 (brand: Choice Protect360) — Tiers: Basic, Silver, Gold, Platinum (customizable base plan + optional add-ons)
+- Travel insurance (brand: Travel Protect360) — Tiers: Basic, Silver, Gold, Platinum
+- Maid insurance (brand: Maid Protect360 Pro) — Tiers: Basic, Enhanced, Premier, Exclusive
+- Car insurance (brand: Car Protect360) — Tiers: None (single plan)
+- Personal Accident insurance (brand: Family Protect360) — Tiers: Bronze, Silver, Premier, Platinum
+- Home insurance (brand: Home Protect360) — Tiers: Silver, Gold, Platinum
+- Early Critical Illness insurance (brand: Early Protect360 Plus) — Tiers: None (sum insured options)
+- Fraud Protect insurance (brand: Fraud Protect360 Plus) — Tiers: Gold, Platinum
+- Hospital Cash insurance (brand: Hospital Protect360) — Tiers: Silver, Premier, Titanium
+- We don't have any hybrid insurance products
+Examples of Suitable Questions for This KB
+- What can you help me with?
+- Which products do you support?
+
+Answering Guidance
+- Answer only the user's question based on this document.
+- If a detail is not present here, say briefly that it's not listed in the capabilities knowledge base.
+- Keep responses concise and user-friendly. Use bullets when listing items.

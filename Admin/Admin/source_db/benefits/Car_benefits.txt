@@ -1,0 +1,17 @@
+TABLE 1 FROM CAR INSURANCE:
+Under the Loss or Damage to Your Car coverage, loss or damage by fire or theft is covered up to market value at time of loss or damage.
+Under the Loss or Damage to Your Car coverage, loss or damage by other insured causes including Act Of God, fallen object, riot, strike, flood, etc is covered up to market value at time of loss or damage.
+Under the Loss or Damage to Your Car coverage, car accessories including all audio, video and other standard equipment fitted into the car by the manufacturer or distributor at time the car was originally purchased are covered up to $1,000.
+Under the Loss or Damage to Your Car coverage, car accident repairs excess is halved if repairs are carried out at a BigTapp Approved Workshop.
+Under the Loss or Damage to Your Car coverage, windscreen cover is unlimited with a windscreen excess of $100 unless the windscreen is repaired at BigTapp Appointed Windscreen Repairer.
+Under the Your Liability to Third Parties coverage, damage to third party property is covered up to S$5,000,000.
+Under the Your Liability to Third Parties coverage, death or injury to third party is covered with unlimited amount.
+Under the You or Your Passenger’s Medical Expenses coverage, medical expenses coverage for the policyholder, authorised driver and passengers up to car legal seating capacity is covered up to S$1,000 each.
+Under the Personal Accident Cover for Injuries in the Car coverage, personal accident benefits for the policyholder are covered up to S$20,000.
+Under the Personal Accident Cover for Injuries in the Car coverage, personal accident benefits for the authorised driver are covered up to S$10,000.
+Under the Personal Accident Cover for Injuries in the Car coverage, personal accident benefits for passengers are covered up to S$10,000.
+Under the Other Car Insurance Benefits Included coverage, daily transport allowance is S$50 a day, up to a total of S$1,000, available for up to ten days if repairs exceed three days.
+Under the Other Car Insurance Benefits Included coverage, towing after accident is covered up to S$500.
+Under the Other Car Insurance Benefits Included coverage, authority to repair for minor repairs is covered up to S$300, with the limit applied after application of policy excess.
+Under the Other Car Insurance Benefits Included coverage, 24 hours automobile and medical assistance services are available.
+
