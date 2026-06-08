@@ -7,10 +7,14 @@ Handles the full customer journey in a single node:
 
 The LLM reads the conversation history and decides which stage it is in —
 no rule-based state machine, no hard routing conditions.
+
+Purchase gating: only validated customers (customer_validated=True) may proceed
+to the payment link step. Anonymous users are redirected to verify their identity.
 """
 from __future__ import annotations
 
 import logging
+import re
 import yaml
 from functools import lru_cache
 from pathlib import Path
@@ -25,6 +29,19 @@ from ..tools.purchase import CROSS_SELL_MAP, FRIENDLY_NAMES
 from ..utils.memory import _get_last_user_message
 
 logger = logging.getLogger(__name__)
+
+# Signals that indicate the user wants to buy / proceed to payment
+_PURCHASE_INTENT_RE = re.compile(
+    r"\b(buy|purchase|get it|take it|sign me up|upgrade me|proceed|go ahead|"
+    r"i('ll| will) take|sounds good|let'?s do it|ok get it|sure|yes please)\b",
+    re.IGNORECASE,
+)
+
+_ANON_GATE_MESSAGE = (
+    "To proceed with purchasing a policy, I'll need to verify your identity first. "
+    "Could you please share your *first name*, *last name*, *email address*, and "
+    "*mobile number* so I can pull up your profile?"
+)
 
 _SALES_PRODUCTS_PATH = CONFIG_DIR / "sales_products.yaml"
 
@@ -231,22 +248,115 @@ def _build_system_prompt() -> str:
     )
 
 
+def _last_ai_text(messages: List[BaseMessage]) -> str:
+    """Return the most recent AI message text, or empty string."""
+    for m in reversed(messages):
+        if isinstance(m, AIMessage):
+            return str(getattr(m, "content", "") or "")
+    return ""
+
+
+def _detect_purchase_signal(user_text: str) -> bool:
+    """Return True if the user's message looks like a purchase intent."""
+    return bool(_PURCHASE_INTENT_RE.search(user_text))
+
+
+def _detect_payment_done(user_text: str) -> bool:
+    """Return True if the user is confirming they have paid."""
+    _DONE_SIGNALS = {
+        "done", "done!", "paid", "payment done", "payment done!",
+        "it's done", "its done", "completed", "payment successful",
+        "i've paid", "ive paid", "payment complete", "ok done",
+        "payment confirmed", "i paid", "i have paid",
+    }
+    return user_text.lower().strip() in _DONE_SIGNALS
+
+
+async def _write_policy_to_customer(nric: str, product_key: str) -> None:
+    """Insert a newly purchased policy into the customer's MongoDB record."""
+    import random
+    from datetime import datetime, timedelta
+    from ..integrations.bigtapp_api import get_bigtapp_api_client, _customer_cache, _persist_customer_to_mongo
+
+    _PRODUCT_META = {
+        "travel":   ("Travel Protect360",       "TA", 52.00,  "Annual"),
+        "home":     ("Home Protect360",          "HC", 45.00,  "Monthly"),
+        "family":   ("Family Protect360",        "FA", 34.90,  "Monthly"),
+        "motor":    ("Car Protect360",           "MP", 156.00, "Monthly"),
+        "maid":     ("Maid Protect360 PRO",      "DY", 25.00,  "Annual"),
+        "early":    ("Early Protect360 Plus",    "ES", 68.50,  "Monthly"),
+        "fraud":    ("Fraud Protect360 Plus",    "CY", 18.90,  "Annual"),
+        "hospital": ("Hospital Protect360",      "HI", 42.00,  "Monthly"),
+        "choice":   ("ChoiceProtect360",         "CK", 15.90,  "Monthly"),
+    }
+
+    meta = _PRODUCT_META.get(product_key.lower())
+    if not meta:
+        logger.warning("sales_agent.write_policy: unknown product_key=%s", product_key)
+        return
+
+    product_name, prefix, premium, frequency = meta
+    now = datetime.now()
+    new_policy = {
+        "policyNo": f"{prefix}{random.randint(400000, 499999)}",
+        "productName": product_name,
+        "status": "Active",
+        "commencementDate": now.strftime("%Y-%m-%dT00:00:00"),
+        "policyEndDate": (now + timedelta(days=365)).strftime("%Y-%m-%dT00:00:00"),
+        "premiumAmount": premium,
+        "paymentFrequency": frequency,
+    }
+
+    # Update the in-memory cache
+    for cd in _customer_cache.values():
+        if cd.get("idCardNumber") == nric:
+            cd.setdefault("policies", []).append(new_policy)
+            _persist_customer_to_mongo(cd)
+            logger.info(
+                "sales_agent.write_policy: added %s (%s) to nric=***%s",
+                new_policy["policyNo"], product_name, nric[-4:],
+            )
+            return
+
+    logger.warning("sales_agent.write_policy: nric=***%s not found in cache", nric[-4:])
+
+
 async def _sales_agent_node(state: AgentState) -> AgentState:
     """LLM-driven end-to-end sales journey agent.
 
     Uses the full conversation history so the LLM can determine the current
     stage (discover / explain / upsell / payment / confirm / cross-sell) without
     any hard-coded state flags.
+
+    Purchase gating: only validated customers may reach the payment link step.
     """
     messages: List[BaseMessage] = state.get("messages", []) or []
     user_text = _get_last_user_message(messages)
     product = state.get("product") or ""
+    customer_validated: bool = state.get("customer_validated", False)
+    customer_nric: str = state.get("customer_nric") or ""
+
     logger.info(
-        "sales_agent: turn=%d product=%s query_len=%d",
+        "sales_agent: turn=%d product=%s validated=%s query_len=%d",
         state.get("turn_count", 0),
         product,
+        customer_validated,
         len(user_text),
     )
+
+    last_ai = _last_ai_text(messages)
+    payment_link_already_sent = "app.bigtapp.com" in last_ai
+
+    # ------------------------------------------------------------------
+    # PURCHASE GATE: if user wants to buy but is not validated, redirect
+    # to identity verification. Anonymous users may browse/compare only.
+    # ------------------------------------------------------------------
+    if not customer_validated and _detect_purchase_signal(user_text):
+        logger.info("sales_agent: purchase signal from unvalidated user → gating")
+        return {
+            "messages": [AIMessage(content=_ANON_GATE_MESSAGE)],
+            "sources": [],
+        }
 
     system_prompt = _build_system_prompt()
 
@@ -271,6 +381,23 @@ async def _sales_agent_node(state: AgentState) -> AgentState:
     except Exception as exc:
         logger.exception("sales_agent: LLM call failed: %s", exc)
         content = _FALLBACK_REPLY
+
+    # ------------------------------------------------------------------
+    # POST-PAYMENT POLICY WRITE
+    # If a payment link was already sent in the previous turn and the user
+    # just confirmed payment, add the policy to the validated customer's record.
+    # ------------------------------------------------------------------
+    if (
+        customer_validated
+        and customer_nric
+        and payment_link_already_sent
+        and _detect_payment_done(user_text)
+        and product
+    ):
+        try:
+            await _write_policy_to_customer(customer_nric, product)
+        except Exception as exc:
+            logger.warning("sales_agent: post-payment write failed: %s", exc)
 
     return {
         "messages": [AIMessage(content=content)],

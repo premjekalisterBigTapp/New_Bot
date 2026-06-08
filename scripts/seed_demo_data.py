@@ -263,6 +263,23 @@ DEMO_CUSTOMERS = [
             },
         ],
     },
+    {
+        "idCardNumber": "S9293940Z",
+        "givenName": "Azhar",
+        "surname": "S",
+        "emailAddress": "Azhar@gmail.com",
+        "mobileNo": "92939495",
+        "dateOfBirth": "1995-01-01T00:00:00",
+        "gender": "Male",
+        "address": {
+            "postalCode": "540221",
+            "unitNo": "#07-88",
+            "blockHouseNumber": "221",
+            "streetName": "Yishun Avenue 5",
+            "buildingName": "",
+        },
+        "policies": [],
+    },
 ]
 
 
