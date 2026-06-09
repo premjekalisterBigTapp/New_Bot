@@ -31,15 +31,14 @@ from ..utils.memory import _get_last_user_message
 logger = logging.getLogger(__name__)
 
 # Signals that indicate the user wants to buy / proceed to payment.
-# This is a FAST-PATH optimisation — catches obvious patterns before calling
-# the LLM to avoid unnecessary cost. The post-LLM gate is the definitive
-# safety net and will catch anything this regex misses.
+# FAST-PATH only — kept deliberately narrow to avoid false positives on
+# general interest phrases like "I want to buy insurance" or "sure, tell me more".
+# The post-LLM gate is the definitive safety net and catches everything else.
 _PURCHASE_INTENT_RE = re.compile(
-    r"\b(buy|purchase|get it|take it|sign me up|upgrade me|proceed|go ahead|"
-    r"go with|i('ll| will) take|i('ll| will) go with|i want it|i want the|"
-    r"sounds good|let'?s do it|let'?s go|ok get it|sure|yes please|"
-    r"confirm|confirmed|add it)\b"
-    r"|^(yes|yeah|yep|yup|ok|okay|👍|✅)$",
+    r"\b(sign me up|upgrade me|proceed|go ahead|go with|"
+    r"i('ll| will) take|i('ll| will) go with|"
+    r"let'?s do it|let'?s go|add it)\b"
+    r"|^(👍|✅)$",
     re.IGNORECASE,
 )
 
@@ -112,6 +111,10 @@ def _build_cross_sell_text() -> str:
 _SYSTEM_PROMPT_TEMPLATE = """\
 You are a friendly, knowledgeable BigTapp insurance advisor on WhatsApp.
 Your goal is to guide the customer through a complete insurance purchase journey.
+
+SESSION CONTEXT:
+- Customer identity: {identity_status}
+
 
 JOURNEY STAGES — follow these in order based on the conversation history:
 
@@ -193,7 +196,8 @@ Keep it conversational and advisory — you are recommending as a trusted adviso
 STAGE 6b – CROSS-SELL EXPLAIN (reply-based, triggered when user shows interest)
 If the user says "yes", "tell me more", "sure", "what does it cover?", or any interest signal:
 → Explain the cross-sell product's key benefits in 2-3 bullets using PRODUCT KNOWLEDGE.
-→ Mention the recommended tier for the cross-sell product.
+→ The recommended tier is already defined in PRODUCT KNOWLEDGE — state it directly.
+→ Do NOT ask the customer what coverage level or preferences they want. Recommend the tier proactively.
 → End with: "Would you like to add *[CROSS-SELL NAME]* to your coverage?"
 Do NOT give the payment link yet. Wait for explicit second confirmation.
 
@@ -214,6 +218,7 @@ Respond warmly: "Thank you for chatting with BigTapp! 😊 Have a wonderful day!
 Do NOT restart the greeting or ask another question.
 
 RULES:
+- Never ask the customer for their name, email address, mobile number, or any personal/contact details. Identity verification is handled automatically by the system — you do not need to collect or re-confirm it at any point.
 - Keep every message short and WhatsApp-friendly (no walls of text).
 - Never say you are an AI or a chatbot. Stay in character as an advisor.
 - If the customer goes off-topic, gently steer them back to the insurance journey.
@@ -244,12 +249,28 @@ _FALLBACK_REPLY = (
 
 
 @lru_cache(maxsize=1)
-def _build_system_prompt() -> str:
-    """Build and cache the full system prompt (static after startup)."""
+def _build_static_prompt_parts() -> tuple:
+    """Build and cache the static parts of the system prompt (product data, links, cross-sell)."""
+    return (
+        _build_product_links_text(),
+        _build_cross_sell_text(),
+        _build_product_knowledge(),
+    )
+
+
+def _build_system_prompt(customer_validated: bool = False) -> str:
+    """Build the system prompt with session-specific context injected."""
+    product_links, cross_sell_pairs, product_knowledge = _build_static_prompt_parts()
+    identity_status = (
+        "VERIFIED — do not ask for any identity details"
+        if customer_validated
+        else "Not yet verified — identity verification will be triggered automatically when the customer is ready to purchase"
+    )
     return _SYSTEM_PROMPT_TEMPLATE.format(
-        product_links=_build_product_links_text(),
-        cross_sell_pairs=_build_cross_sell_text(),
-        product_knowledge=_build_product_knowledge(),
+        identity_status=identity_status,
+        product_links=product_links,
+        cross_sell_pairs=cross_sell_pairs,
+        product_knowledge=product_knowledge,
     )
 
 
@@ -368,7 +389,7 @@ async def _sales_agent_node(state: AgentState) -> AgentState:
             "pending_purchase": True,
         }
 
-    system_prompt = _build_system_prompt()
+    system_prompt = _build_system_prompt(customer_validated=customer_validated)
 
     # Pass the full conversation history so the LLM can track the journey stage.
     # Cap at last 20 messages to avoid prompt overflow.
