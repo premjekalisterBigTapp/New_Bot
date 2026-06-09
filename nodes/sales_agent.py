@@ -30,10 +30,16 @@ from ..utils.memory import _get_last_user_message
 
 logger = logging.getLogger(__name__)
 
-# Signals that indicate the user wants to buy / proceed to payment
+# Signals that indicate the user wants to buy / proceed to payment.
+# This is a FAST-PATH optimisation — catches obvious patterns before calling
+# the LLM to avoid unnecessary cost. The post-LLM gate is the definitive
+# safety net and will catch anything this regex misses.
 _PURCHASE_INTENT_RE = re.compile(
     r"\b(buy|purchase|get it|take it|sign me up|upgrade me|proceed|go ahead|"
-    r"i('ll| will) take|sounds good|let'?s do it|ok get it|sure|yes please)\b",
+    r"go with|i('ll| will) take|i('ll| will) go with|i want it|i want the|"
+    r"sounds good|let'?s do it|let'?s go|ok get it|sure|yes please|"
+    r"confirm|confirmed|add it)\b"
+    r"|^(yes|yeah|yep|yup|ok|okay|👍|✅)$",
     re.IGNORECASE,
 )
 
@@ -208,7 +214,6 @@ Respond warmly: "Thank you for chatting with BigTapp! 😊 Have a wonderful day!
 Do NOT restart the greeting or ask another question.
 
 RULES:
-- Never ask for the customer's name or personal contact details.
 - Keep every message short and WhatsApp-friendly (no walls of text).
 - Never say you are an AI or a chatbot. Stay in character as an advisor.
 - If the customer goes off-topic, gently steer them back to the insurance journey.
@@ -347,6 +352,22 @@ async def _sales_agent_node(state: AgentState) -> AgentState:
     last_ai = _last_ai_text(messages)
     payment_link_already_sent = "app.bigtapp.com" in last_ai
 
+    # ------------------------------------------------------------------
+    # PURCHASE GATE: block unvalidated users from receiving a payment link.
+    # Browsing (info / recommendations) is allowed without validation.
+    # The moment the user signals intent to actually buy, require identity
+    # verification first, then return them to this journey automatically.
+    # ------------------------------------------------------------------
+    if _detect_purchase_signal(user_text) and not customer_validated:
+        logger.info(
+            "sales_agent.purchase_gate: purchase signal detected but user not validated → redirecting to identity verification"
+        )
+        return {
+            "messages": [AIMessage(content=_ANON_GATE_MESSAGE)],
+            "sources": [],
+            "pending_purchase": True,
+        }
+
     system_prompt = _build_system_prompt()
 
     # Pass the full conversation history so the LLM can track the journey stage.
@@ -370,6 +391,26 @@ async def _sales_agent_node(state: AgentState) -> AgentState:
     except Exception as exc:
         logger.exception("sales_agent: LLM call failed: %s", exc)
         content = _FALLBACK_REPLY
+
+    # ------------------------------------------------------------------
+    # POST-LLM PURCHASE GATE (definitive safety net)
+    # The pre-LLM regex gate catches obvious patterns like "buy" or "proceed"
+    # but misses natural phrases like "go with gold", "yes", "👍", "that one",
+    # "gold please", "confirm", "ok", "add it", etc.
+    # Here we check the LLM's actual output — if it generated a payment link
+    # but the user is not validated, we intercept and redirect regardless of
+    # how the user phrased their purchase intent. This is guaranteed to catch
+    # 100% of cases because we inspect the output, not predict the input.
+    # ------------------------------------------------------------------
+    if "app.bigtapp.com" in content and not customer_validated:
+        logger.info(
+            "sales_agent.purchase_gate.post_llm: LLM generated payment link for unvalidated user → intercepting"
+        )
+        return {
+            "messages": [AIMessage(content=_ANON_GATE_MESSAGE)],
+            "sources": [],
+            "pending_purchase": True,
+        }
 
     # ------------------------------------------------------------------
     # POST-PAYMENT POLICY WRITE
