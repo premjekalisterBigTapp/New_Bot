@@ -43,9 +43,8 @@ _PURCHASE_INTENT_RE = re.compile(
 )
 
 _ANON_GATE_MESSAGE = (
-    "To proceed with purchasing a policy, I'll need to verify your identity first. "
-    "Could you please share your *first name*, *last name*, *email address*, and "
-    "*mobile number* so I can pull up your profile?"
+    "Just a moment — I'll need to verify your identity before sending the payment link. "
+    "What is your first name?"
 )
 
 _SALES_PRODUCTS_PATH = CONFIG_DIR / "sales_products.yaml"
@@ -111,10 +110,6 @@ def _build_cross_sell_text() -> str:
 _SYSTEM_PROMPT_TEMPLATE = """\
 You are a friendly, knowledgeable BigTapp insurance advisor on WhatsApp.
 Your goal is to guide the customer through a complete insurance purchase journey.
-
-SESSION CONTEXT:
-- Customer identity: {identity_status}
-
 
 JOURNEY STAGES — follow these in order based on the conversation history:
 
@@ -249,28 +244,12 @@ _FALLBACK_REPLY = (
 
 
 @lru_cache(maxsize=1)
-def _build_static_prompt_parts() -> tuple:
-    """Build and cache the static parts of the system prompt (product data, links, cross-sell)."""
-    return (
-        _build_product_links_text(),
-        _build_cross_sell_text(),
-        _build_product_knowledge(),
-    )
-
-
-def _build_system_prompt(customer_validated: bool = False) -> str:
-    """Build the system prompt with session-specific context injected."""
-    product_links, cross_sell_pairs, product_knowledge = _build_static_prompt_parts()
-    identity_status = (
-        "VERIFIED — do not ask for any identity details"
-        if customer_validated
-        else "Not yet verified — identity verification will be triggered automatically when the customer is ready to purchase"
-    )
+def _build_system_prompt() -> str:
+    """Build and cache the full system prompt (static after startup)."""
     return _SYSTEM_PROMPT_TEMPLATE.format(
-        identity_status=identity_status,
-        product_links=product_links,
-        cross_sell_pairs=cross_sell_pairs,
-        product_knowledge=product_knowledge,
+        product_links=_build_product_links_text(),
+        cross_sell_pairs=_build_cross_sell_text(),
+        product_knowledge=_build_product_knowledge(),
     )
 
 
@@ -374,6 +353,34 @@ async def _sales_agent_node(state: AgentState) -> AgentState:
     payment_link_already_sent = "app.bigtapp.com" in last_ai
 
     # ------------------------------------------------------------------
+    # JUST-VERIFIED SHORTCUT
+    # When service_flow finishes and routes back here via service_exit_intent,
+    # the last AI message is one of the "Identity verified" confirmations.
+    # Skip the LLM entirely and return the payment link directly so the user
+    # doesn't get sent back through discovery.
+    # ------------------------------------------------------------------
+    _JUST_VERIFIED_SIGNALS = (
+        "✅ Identity verified!",
+        "Identity verified! ✅",
+        "✅ *Identity verified!*",
+    )
+    just_verified = any(sig in last_ai for sig in _JUST_VERIFIED_SIGNALS)
+
+    if just_verified and customer_validated and product:
+        links = _load_purchase_links()
+        link = links.get(product)
+        if link:
+            friendly = FRIENDLY_NAMES.get(product, product)
+            content = (
+                f"Here is your payment link for *{friendly}*:\n{link}\n\n"
+                "Complete your payment and let me know once it's done! 🎉"
+            )
+            logger.info(
+                "sales_agent.just_verified_shortcut: returning payment link for product=%s", product
+            )
+            return {"messages": [AIMessage(content=content)], "sources": []}
+
+    # ------------------------------------------------------------------
     # PURCHASE GATE: block unvalidated users from receiving a payment link.
     # Browsing (info / recommendations) is allowed without validation.
     # The moment the user signals intent to actually buy, require identity
@@ -387,9 +394,10 @@ async def _sales_agent_node(state: AgentState) -> AgentState:
             "messages": [AIMessage(content=_ANON_GATE_MESSAGE)],
             "sources": [],
             "pending_purchase": True,
+            "phase": "service_flow",
         }
 
-    system_prompt = _build_system_prompt(customer_validated=customer_validated)
+    system_prompt = _build_system_prompt()
 
     # Pass the full conversation history so the LLM can track the journey stage.
     # Cap at last 20 messages to avoid prompt overflow.
@@ -431,6 +439,7 @@ async def _sales_agent_node(state: AgentState) -> AgentState:
             "messages": [AIMessage(content=_ANON_GATE_MESSAGE)],
             "sources": [],
             "pending_purchase": True,
+            "phase": "service_flow",
         }
 
     # ------------------------------------------------------------------

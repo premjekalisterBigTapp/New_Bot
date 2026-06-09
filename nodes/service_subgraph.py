@@ -1967,8 +1967,7 @@ def _service_ask_action(state: AgentState) -> Dict[str, Any]:
             "service_exit_intent": "purchase",
             "messages": [AIMessage(
                 content=(
-                    "Identity verified! ✅ Let's continue with your insurance purchase. "
-                    "Which product were you looking to get?"
+                    "✅ Identity verified! Let me send you the payment link now."
                 )
             )],
         }
@@ -2494,9 +2493,7 @@ async def _service_validate_customer(state: AgentState) -> Dict[str, Any]:
                     "service_exit_intent": "purchase",
                     "messages": [AIMessage(
                         content=(
-                            f"✅ *Identity verified!* Welcome, {given_name}!\n\n"
-                            "Let's continue with your purchase. "
-                            "Which product and plan would you like to go with?"
+                            f"✅ *Identity verified!* Welcome, {given_name}! Let me send you the payment link now."
                         )
                     )],
                 }
